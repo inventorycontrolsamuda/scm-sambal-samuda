@@ -12,6 +12,17 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         @media print {
+            @page {
+                size: A4 portrait;
+                margin: 8mm 10mm;
+            }
+            html, body {
+                height: auto !important;
+                overflow: visible !important;
+                background: white !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
             body * {
                 visibility: hidden;
             }
@@ -19,13 +30,46 @@
                 visibility: visible;
             }
             #printable-area {
-                position: absolute;
+                position: fixed;
                 left: 0;
                 top: 0;
                 width: 100%;
-                margin: 0;
-                padding: 20px;
-                background: white;
+                max-width: 100%;
+                margin: 0 !important;
+                padding: 0 !important;
+                background: white !important;
+                font-size: 11px !important;
+                line-height: 1.3 !important;
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
+            #printable-area > * {
+                margin-top: 0 !important;
+                margin-bottom: 10px !important;
+            }
+            #printable-area h2 {
+                font-size: 16px !important;
+            }
+            #printable-area h1 {
+                font-size: 15px !important;
+            }
+            #printable-area table th,
+            #printable-area table td {
+                padding: 4px 6px !important;
+                font-size: 10.5px !important;
+            }
+            #printable-area .print-signatures {
+                padding-top: 12px !important;
+                margin-bottom: 0 !important;
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
+            #printable-area .print-signatures > div {
+                gap: 0 !important;
+            }
+            #printable-area .print-sign-space {
+                height: 44px !important;
+                margin: 0 !important;
             }
             .no-print {
                 display: none !important;
@@ -54,6 +98,7 @@
                 <button @click="currentRole = 'resto'" :class="currentRole === 'resto' ? 'bg-white text-red-800 font-bold shadow' : 'text-white hover:bg-red-700/50'" class="px-3 py-1.5 rounded text-xs transition duration-150 whitespace-nowrap">Admin Resto</button>
                 <button @click="currentRole = 'ck'" :class="currentRole === 'ck' ? 'bg-white text-red-800 font-bold shadow' : 'text-white hover:bg-red-700/50'" class="px-3 py-1.5 rounded text-xs transition duration-150 whitespace-nowrap">Central Kitchen</button>
                 <button @click="currentRole = 'audit'" :class="currentRole === 'audit' ? 'bg-white text-red-800 font-bold shadow' : 'text-white hover:bg-red-700/50'" class="px-3 py-1.5 rounded text-xs transition duration-150 whitespace-nowrap">Audit & Laporan</button>
+                <button @click="currentRole = 'superadmin'" :class="currentRole === 'superadmin' ? 'bg-amber-400 text-red-950 font-black shadow' : 'text-amber-200 hover:bg-red-700/50'" class="px-3 py-1.5 rounded text-xs transition duration-150 whitespace-nowrap"><i class="fa-solid fa-crown mr-1"></i> Super Admin</button>
             </div>
         </div>
     </header>
@@ -69,14 +114,15 @@
                 </div>
                 <div>
                     <p class="text-xs text-slate-500 font-medium">Status Akses & Lokasi:</p>
-                    <p class="text-sm font-bold text-slate-800" x-text="getRoleName() + ' — ' + (currentRole === 'resto' ? getSelectedOutletName() : 'Gudang Pusat Samuda')"></p>
+                    <p class="text-sm font-bold text-slate-800" x-text="getRoleName() + ' — ' + (currentRole === 'resto' ? getSelectedOutletName() : ckProfile.name)"></p>
                 </div>
             </div>
             <div class="flex flex-wrap items-center gap-3">
                 <div class="text-[11px] font-semibold px-3 py-1 rounded-full flex items-center gap-1.5"
                      :class="isCloudConnected ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'">
                     <span class="w-2 h-2 rounded-full" :class="isCloudConnected ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'"></span>
-                    <span x-text="isCloudConnected ? 'Sinkronisasi Cloud Aktif (Semua Perangkat)' : 'Menghubungkan ke Firebase...'"></span>
+                    <span x-text="isCloudConnected ? 'Terhubung Firebase Cloud (scm-sambal-samuda)' : 'Mode Lokal (Cek Firestore Rules)'"></span>
+                    <button x-show="!isCloudConnected" @click="reconnectFirebase()" class="ml-1 underline text-red-700 hover:text-red-900 font-bold">Hubungkan Ulang</button>
                 </div>
                 <template x-if="currentRole === 'resto'">
                     <div class="flex items-center gap-2">
@@ -91,249 +137,165 @@
             </div>
         </div>
 
-        <!-- ================= VIEW 1: RESTO OUTLET ================= -->
+        <!-- ================= VIEW 1: ADMIN RESTO (OUTLET) ================= -->
         <div x-show="currentRole === 'resto'" class="space-y-6">
-            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
-                <div>
-                    <h2 class="text-xl font-bold text-slate-800"><i class="fa-solid fa-store text-red-600 mr-2"></i> Dashboard Outlet Resto</h2>
-                    <p class="text-sm text-slate-500">Buat Purchase Order (PO) bahan baku ke Central Kitchen dengan melihat stok ready CK secara real-time.</p>
+            <!-- Ringkasan Cepat Outlet -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold text-slate-500">Total PO Outlet Ini</p>
+                        <p class="text-2xl font-black text-slate-800 mt-1" x-text="filteredRestoPOs.length"></p>
+                    </div>
+                    <div class="bg-red-100 text-red-700 p-3 rounded-xl text-xl"><i class="fa-solid fa-file-invoice"></i></div>
                 </div>
-                <button @click="openCreatePOModal()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded-xl font-medium text-sm shadow transition flex items-center gap-2">
-                    <i class="fa-solid fa-plus"></i> Buat PO Baru
-                </button>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- PO List Card -->
-                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
-                    <div class="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
-                        <h3 class="font-bold text-slate-800 text-sm"><i class="fa-solid fa-file-invoice text-red-600 mr-2"></i> Riwayat PO Outlet Ini</h3>
-                        <span class="text-xs bg-red-100 text-red-800 px-2.5 py-1 rounded-full font-bold" x-text="filteredRestoPOs.length + ' PO'"></span>
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold text-slate-500">Barang Dalam Pengiriman</p>
+                        <p class="text-2xl font-black text-blue-600 mt-1" x-text="pendingReceiptsCount"></p>
                     </div>
-                    <div class="p-4 flex-1 overflow-x-auto">
-                        <table class="w-full text-left text-xs">
-                            <thead>
-                                <tr class="text-slate-500 border-b border-slate-100">
-                                    <th class="pb-2">No. PO</th>
-                                    <th class="pb-2">Target Kirim</th>
-                                    <th class="pb-2">Status</th>
-                                    <th class="pb-2 text-right">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-50">
-                                <template x-for="po in filteredRestoPOs" :key="po.id">
-                                    <tr>
-                                        <td class="py-3 font-semibold text-slate-800" x-text="po.id"></td>
-                                        <td class="py-3 text-slate-600" x-text="formatDate(po.targetDate)"></td>
-                                        <td class="py-3">
-                                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold" :class="getStatusBadgeClass(po.status)" x-text="getStatusLabel(po.status)"></span>
-                                        </td>
-                                        <td class="py-3 text-right">
-                                            <button @click="viewPODetail(po)" class="text-red-600 hover:text-red-800 font-semibold">Detail / SJ</button>
-                                        </td>
-                                    </tr>
-                                </template>
-                                <template x-if="filteredRestoPOs.length === 0">
-                                    <tr>
-                                        <td colspan="4" class="text-center py-8 text-slate-400">Belum ada Purchase Order dari outlet ini.</td>
-                                    </tr>
-                                </template>
-                            </tbody>
-                        </table>
-                    </div>
+                    <div class="bg-blue-100 text-blue-700 p-3 rounded-xl text-xl"><i class="fa-solid fa-truck-fast"></i></div>
                 </div>
-
-                <!-- Incoming Shipments & Receipt Confirmation -->
-                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
-                    <div class="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
-                        <h3 class="font-bold text-slate-800 text-sm"><i class="fa-solid fa-truck-ramp-box text-red-600 mr-2"></i> Pengiriman Masuk & Konfirmasi Terima</h3>
-                        <span class="text-xs bg-blue-100 text-blue-800 px-2.5 py-1 rounded-full font-bold" x-text="pendingReceiptsCount + ' Perlu Diterima'"></span>
+                <div class="bg-gradient-to-br from-red-700 to-red-900 text-white p-5 rounded-2xl shadow-md flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-red-200 font-medium">Pesan Bahan Baku ke CK</p>
+                        <button @click="openCreatePOModal()" class="mt-2 bg-white text-red-800 hover:bg-red-50 px-4 py-2 rounded-xl text-xs font-bold shadow transition">
+                            <i class="fa-solid fa-plus mr-1"></i> Buat PO Baru
+                        </button>
                     </div>
-                    <div class="p-4 flex-1 overflow-x-auto">
-                        <table class="w-full text-left text-xs">
-                            <thead>
-                                <tr class="text-slate-500 border-b border-slate-100">
-                                    <th class="pb-2">No. Surat Jalan</th>
-                                    <th class="pb-2">Kurir / Driver</th>
-                                    <th class="pb-2">Status SJ</th>
-                                    <th class="pb-2 text-right">Aksi Terima</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-50">
-                                <template x-for="sj in incomingShipmentsForResto" :key="sj.id">
-                                    <tr>
-                                        <td class="py-3 font-semibold text-slate-800" x-text="sj.id"></td>
-                                        <td class="py-3 text-slate-600" x-text="sj.driverName + ' (' + sj.plateOrResi + ')'"></td>
-                                        <td class="py-3">
-                                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold" :class="getSJStatusBadgeClass(sj.status)" x-text="getSJStatusLabel(sj.status)"></span>
-                                        </td>
-                                        <td class="py-3 text-right">
-                                            <template x-if="sj.status === 'IN_TRANSIT'">
-                                                <button @click="openReceiveModal(sj)" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 rounded-lg font-bold shadow-sm">Terima Barang</button>
-                                            </template>
-                                            <template x-if="sj.status !== 'IN_TRANSIT'">
-                                                <button @click="openPrintSJModal(sj)" class="text-slate-600 hover:text-slate-900 font-semibold underline">Lihat SJ</button>
-                                            </template>
-                                        </td>
-                                    </tr>
-                                </template>
-                                <template x-if="incomingShipmentsForResto.length === 0">
-                                    <tr>
-                                        <td colspan="4" class="text-center py-8 text-slate-400">Belum ada pengiriman dalam perjalanan.</td>
-                                    </tr>
-                                </template>
-                            </tbody>
-                        </table>
-                    </div>
+                    <div class="text-3xl text-red-300/60"><i class="fa-solid fa-cart-shopping"></i></div>
                 </div>
             </div>
-        </div>
 
-        <!-- ================= VIEW 2: CENTRAL KITCHEN ================= -->
-        <div x-show="currentRole === 'ck'" class="space-y-6">
-            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
-                <div>
-                    <h2 class="text-xl font-bold text-slate-800"><i class="fa-solid fa-industry text-red-600 mr-2"></i> Central Kitchen Management</h2>
-                    <p class="text-sm text-slate-500">Validasi PO outlet, kelola produk SKU, kategori bahan baku, dan stok gudang pusat.</p>
-                </div>
-                <div class="flex items-center flex-wrap gap-2">
-                    <button @click="openRestockModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-xl font-medium text-xs shadow transition flex items-center gap-1.5">
-                        <i class="fa-solid fa-box-archive"></i> Restock
-                    </button>
-                    <button @click="openCategoryModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-xl font-medium text-xs shadow transition flex items-center gap-1.5">
-                        <i class="fa-solid fa-tags"></i> Kelola Kategori
-                    </button>
-                    <button @click="openAddItemModal()" class="bg-slate-800 hover:bg-slate-900 text-white px-3 py-2 rounded-xl font-medium text-xs shadow transition flex items-center gap-1.5">
-                        <i class="fa-solid fa-plus-circle"></i> Tambah SKU
+            <!-- Banner Notifikasi Pengiriman Masuk (Jika ada barang dikirim dari CK) -->
+            <template x-if="pendingReceiptsCount > 0">
+                <div class="bg-blue-50 border-2 border-blue-300 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm">
+                    <div class="flex items-center gap-3">
+                        <div class="bg-blue-600 text-white w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0">
+                            <i class="fa-solid fa-truck-fast"></i>
+                        </div>
+                        <div>
+                            <p class="font-bold text-blue-950 text-xs sm:text-sm" x-text="'Ada ' + pendingReceiptsCount + ' Pengiriman Barang Menunggu Konfirmasi Penerimaan!'"></p>
+                            <p class="text-[11px] text-blue-800">Klik tombol "Terima Barang" pada tabel di bawah setelah memeriksa fisik barang dari Central Kitchen.</p>
+                        </div>
+                    </div>
+                    <button @click="const firstSJ = incomingShipmentsForResto.find(s => s.status === 'IN_TRANSIT'); if(firstSJ) openReceiveModal(firstSJ);" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-xs font-bold shadow whitespace-nowrap">
+                        <i class="fa-solid fa-box-open mr-1"></i> Proses Penerimaan Sekarang
                     </button>
                 </div>
-            </div>
+            </template>
 
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- PO Pending Masuk dari Outlet -->
-                <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
-                    <div class="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
-                        <h3 class="font-bold text-slate-800 text-sm"><i class="fa-solid fa-clipboard-list text-red-600 mr-2"></i> Daftar PO Masuk dari Seluruh Outlet</h3>
-                        <span class="text-xs bg-amber-100 text-amber-800 px-2.5 py-1 rounded-full font-bold" x-text="pendingPOCount + ' PO Pending'"></span>
-                    </div>
-                    <div class="p-4 overflow-x-auto">
-                        <table class="w-full text-left text-xs">
-                            <thead>
-                                <tr class="text-slate-500 border-b border-slate-100">
-                                    <th class="pb-2">No. PO</th>
-                                    <th class="pb-2">Outlet Pemesan</th>
-                                    <th class="pb-2">Target Kirim</th>
-                                    <th class="pb-2">Status</th>
-                                    <th class="pb-2 text-right">Proses / Kirim</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-50">
-                                <template x-for="po in pos" :key="po.id">
-                                    <tr>
-                                        <td class="py-3 font-semibold text-slate-800" x-text="po.id"></td>
-                                        <td class="py-3 text-slate-700 font-medium" x-text="getOutletName(po.outletId)"></td>
-                                        <td class="py-3 text-slate-600" x-text="formatDate(po.targetDate)"></td>
-                                        <td class="py-3">
-                                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold" :class="getStatusBadgeClass(po.status)" x-text="getStatusLabel(po.status)"></span>
-                                        </td>
-                                        <td class="py-3 text-right">
-                                            <template x-if="po.status === 'PENDING'">
-                                                <button @click="openProcessPOModal(po)" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg font-bold shadow-sm">Proses & Cek Stok</button>
-                                            </template>
-                                            <template x-if="po.status !== 'PENDING'">
-                                                <button @click="viewPODetail(po)" class="text-slate-600 hover:text-slate-900 font-semibold underline">Lihat SJ</button>
-                                            </template>
-                                        </td>
-                                    </tr>
-                                </template>
-                                <template x-if="pos.length === 0">
-                                    <tr>
-                                        <td colspan="5" class="text-center py-8 text-slate-400">Belum ada PO tercatat.</td>
-                                    </tr>
-                                </template>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Gudang Stok CK Summary -->
-                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
-                    <div class="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
-                        <h3 class="font-bold text-slate-800 text-sm"><i class="fa-solid fa-boxes-stacked text-red-600 mr-2"></i> Stok & Manajemen Produk CK</h3>
-                        <span class="text-xs bg-slate-200 text-slate-700 px-2 py-0.5 rounded font-bold" x-text="inventory.length + ' Item'"></span>
-                    </div>
-                    <div class="p-4 overflow-y-auto max-h-[480px] space-y-3">
-                        <template x-for="inv in inventory" :key="inv.id">
-                            <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
-                                <div class="flex items-center justify-between">
-                                    <div>
-                                        <p class="font-bold text-xs text-slate-800" x-text="inv.name"></p>
-                                        <p class="text-[10px] text-slate-500">Kat: <span class="font-medium text-slate-600" x-text="inv.category"></span> | Min: <span x-text="inv.minStock + ' ' + inv.unit"></span></p>
-                                    </div>
-                                    <div class="text-right">
-                                        <p class="font-black text-sm" :class="inv.stock <= inv.minStock ? 'text-red-600' : 'text-emerald-700'" x-text="inv.stock + ' ' + inv.unit"></p>
-                                        <span class="text-[9px] px-1.5 py-0.5 rounded font-bold" :class="inv.stock <= inv.minStock ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-800'" x-text="inv.stock <= inv.minStock ? 'Menipis' : 'Aman'"></span>
-                                    </div>
-                                </div>
-                                <div class="flex items-center justify-between pt-1 border-t border-slate-200">
-                                    <div class="flex items-center gap-1">
-                                        <button @click="quickAdjustStock(inv, 10)" title="Tambah Stok +10" class="bg-emerald-500 text-white px-2 py-0.5 rounded text-[10px] font-bold hover:bg-emerald-600">+10</button>
-                                        <button @click="quickAdjustStock(inv, -10)" title="Kurangi Stok -10" class="bg-amber-500 text-white px-2 py-0.5 rounded text-[10px] font-bold hover:bg-amber-600">-10</button>
-                                    </div>
-                                    <div class="flex items-center gap-1">
-                                        <button @click="openEditItemModal(inv)" title="Edit Produk" class="text-blue-600 hover:text-blue-800 p-1 text-xs font-bold"><i class="fa-solid fa-pen-to-square"></i></button>
-                                        <button @click="deleteInventoryItem(inv.id)" title="Hapus Produk" class="text-red-500 hover:text-red-700 p-1 text-xs font-bold"><i class="fa-solid fa-trash"></i></button>
-                                    </div>
-                                </div>
-                            </div>
-                        </template>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- ================= VIEW 3: AUDIT & LAPORAN ================= -->
-        <div x-show="currentRole === 'audit'" class="space-y-6">
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
-                <h2 class="text-xl font-bold text-slate-800"><i class="fa-solid fa-chart-line text-red-600 mr-2"></i> Audit & Kartu Stok (Ledger Mutasi)</h2>
-                <p class="text-sm text-slate-500">Riwayat lengkap mutasi keluar masuk barang dari Central Kitchen ke seluruh outlet.</p>
-            </div>
-
+            <!-- Daftar Pengiriman Masuk (Surat Jalan) -->
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                <div class="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
-                    <h3 class="font-bold text-slate-800 text-sm">Kartu Stok Logistik Pusat (Stock Ledger)</h3>
-                    <span class="text-xs bg-slate-200 text-slate-700 px-2 py-0.5 rounded font-bold" x-text="stockCardLogs.length + ' Log Aktivitas'"></span>
+                <div class="p-4 border-b border-slate-100 bg-slate-50 flex flex-wrap justify-between items-center gap-2">
+                    <div>
+                        <h2 class="font-bold text-slate-800 text-sm"><i class="fa-solid fa-truck-ramp-box text-red-600 mr-2"></i> Surat Jalan & Konfirmasi Penerimaan Barang</h2>
+                        <p class="text-[11px] text-slate-500">Daftar pengiriman dari Central Kitchen untuk <span class="font-bold text-slate-700" x-text="getSelectedOutletName()"></span></p>
+                    </div>
+                    <span class="text-xs bg-blue-100 text-blue-800 px-2.5 py-1 rounded-full font-bold" x-text="incomingShipmentsForResto.length + ' Surat Jalan'"></span>
                 </div>
                 <div class="p-4 overflow-x-auto">
                     <table class="w-full text-left text-xs">
                         <thead>
                             <tr class="text-slate-500 border-b border-slate-100">
-                                <th class="pb-2">Waktu</th>
-                                <th class="pb-2">Nama Barang (SKU)</th>
-                                <th class="pb-2">Tipe Mutasi</th>
-                                <th class="pb-2">Kuantitas</th>
-                                <th class="pb-2">Sisa Saldo</th>
-                                <th class="pb-2">Referensi Dokumen</th>
+                                <th class="pb-3">No. Surat Jalan</th>
+                                <th class="pb-3">Ref. PO</th>
+                                <th class="pb-3">Kurir / Driver</th>
+                                <th class="pb-3">Daftar Barang Dikirim</th>
+                                <th class="pb-3">Status</th>
+                                <th class="pb-3 text-right">Aksi</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-slate-50">
-                            <template x-for="log in stockCardLogs" :key="log.id">
-                                <tr>
-                                    <td class="py-3 text-slate-600" x-text="formatDateTime(log.timestamp)"></td>
-                                    <td class="py-3 font-semibold text-slate-800" x-text="log.itemName"></td>
+                        <tbody class="divide-y divide-slate-100">
+                            <template x-if="incomingShipmentsForResto.length === 0">
+                                <tr><td colspan="6" class="py-6 text-center text-slate-400 italic">Belum ada Surat Jalan / pengiriman masuk untuk outlet ini. (Pastikan pilihan "Pilih Outlet" di atas sudah sesuai).</td></tr>
+                            </template>
+                            <template x-for="sj in incomingShipmentsForResto" :key="sj.id">
+                                <tr class="hover:bg-slate-50">
                                     <td class="py-3">
-                                        <span class="px-2 py-0.5 rounded font-bold text-[10px]" 
-                                            :class="log.type === 'IN_RESTOCK' ? 'bg-emerald-100 text-emerald-800' : (log.type === 'OUT_PO_SHIPMENT' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800')" 
-                                            x-text="log.type"></span>
+                                        <span class="font-bold text-slate-800 block" x-text="sj.id"></span>
+                                        <span class="text-[10px] text-slate-400" x-text="formatDateTime(sj.dispatchTime)"></span>
                                     </td>
-                                    <td class="py-3 font-bold" :class="log.qty > 0 ? 'text-emerald-700' : 'text-red-600'" x-text="(log.qty > 0 ? '+' : '') + log.qty + ' ' + log.unit"></td>
-                                    <td class="py-3 font-bold text-slate-800" x-text="log.balanceAfter + ' ' + log.unit"></td>
-                                    <td class="py-3 font-mono text-slate-600" x-text="log.refNo"></td>
+                                    <td class="py-3 font-mono text-slate-600" x-text="sj.poId"></td>
+                                    <td class="py-3 text-slate-700">
+                                        <span class="font-semibold block" x-text="sj.driverName"></span>
+                                        <span class="text-[10px] text-slate-500" x-text="sj.plateOrResi"></span>
+                                    </td>
+                                    <td class="py-3">
+                                        <template x-for="it in sj.items" :key="it.itemId">
+                                            <span class="inline-block bg-slate-100 px-2 py-0.5 rounded mr-1 mb-1 text-[11px]" x-text="getItemName(it.itemId) + ': ' + it.qtyShipped + ' ' + getItemUnit(it.itemId)"></span>
+                                        </template>
+                                    </td>
+                                    <td class="py-3">
+                                        <span class="px-2.5 py-1 rounded-full text-[11px] font-bold" :class="getSJStatusBadgeClass(sj.status)" x-text="getSJStatusLabel(sj.status)"></span>
+                                    </td>
+                                    <td class="py-3 text-right space-x-1.5 whitespace-nowrap">
+                                        <button @click="openPrintSJModal(sj)" class="bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 px-3 py-1.5 rounded-lg font-bold transition">
+                                            <i class="fa-solid fa-file-lines mr-1"></i> Lihat Surat Jalan
+                                        </button>
+                                        <template x-if="sj.status === 'IN_TRANSIT'">
+                                            <button @click="openReceiveModal(sj)" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 rounded-lg font-bold shadow transition">
+                                                <i class="fa-solid fa-box-open mr-1"></i> Terima Barang
+                                            </button>
+                                        </template>
+                                    </td>
                                 </tr>
                             </template>
-                            <template x-if="stockCardLogs.length === 0">
-                                <tr>
-                                    <td colspan="6" class="text-center py-8 text-slate-400">Belum ada riwayat mutasi stok.</td>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Riwayat Purchase Order (PO) Outlet -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="p-4 border-b border-slate-100 bg-slate-50">
+                    <h2 class="font-bold text-slate-800 text-sm"><i class="fa-solid fa-list-check text-red-600 mr-2"></i> Riwayat Purchase Order (PO) Outlet</h2>
+                </div>
+                <div class="p-4 overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead>
+                            <tr class="text-slate-500 border-b border-slate-100">
+                                <th class="pb-3">No. PO</th>
+                                <th class="pb-3">Tanggal Dibuat</th>
+                                <th class="pb-3">Target Kirim</th>
+                                <th class="pb-3">Item Pesanan</th>
+                                <th class="pb-3">Status</th>
+                                <th class="pb-3 text-right">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            <template x-if="filteredRestoPOs.length === 0">
+                                <tr><td colspan="6" class="py-6 text-center text-slate-400 italic">Belum ada riwayat PO untuk outlet ini. Klik "Buat PO Baru" di atas.</td></tr>
+                            </template>
+                            <template x-for="po in filteredRestoPOs" :key="po.id">
+                                <tr class="hover:bg-slate-50">
+                                    <td class="py-3 font-bold text-slate-800" x-text="po.id"></td>
+                                    <td class="py-3 text-slate-500" x-text="formatDateTime(po.createdAt)"></td>
+                                    <td class="py-3 font-semibold text-slate-700" x-text="formatDate(po.targetDate)"></td>
+                                    <td class="py-3 text-slate-600">
+                                        <template x-for="it in po.items" :key="it.itemId">
+                                            <span class="inline-block bg-slate-100 px-2 py-0.5 rounded mr-1 mb-1 text-[11px]" x-text="getItemName(it.itemId) + ' (' + it.qty + ' ' + getItemUnit(it.itemId) + ')'"></span>
+                                        </template>
+                                    </td>
+                                    <td class="py-3">
+                                        <span class="px-2.5 py-1 rounded-full text-[11px] font-bold" :class="getStatusBadgeClass(po.status)" x-text="getStatusLabel(po.status)"></span>
+                                    </td>
+                                    <td class="py-3 text-right space-x-1 whitespace-nowrap">
+                                        <template x-if="po.status === 'PENDING'">
+                                            <button @click="openEditRestoPOModal(po)" class="bg-amber-100 hover:bg-amber-200 text-amber-900 px-2.5 py-1.5 rounded-lg font-bold transition">
+                                                <i class="fa-solid fa-pen-to-square mr-1"></i> Edit PO
+                                            </button>
+                                        </template>
+                                        <template x-if="po.sjId">
+                                            <button @click="viewPODetail(po)" class="bg-blue-50 hover:bg-blue-100 text-blue-700 px-2.5 py-1.5 rounded-lg font-bold">
+                                                <i class="fa-solid fa-file-invoice mr-1"></i> Surat Jalan
+                                            </button>
+                                        </template>
+                                        <template x-if="!po.sjId">
+                                            <button @click="viewPODetail(po)" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1.5 rounded-lg font-bold">
+                                                Detail
+                                            </button>
+                                        </template>
+                                    </td>
                                 </tr>
                             </template>
                         </tbody>
@@ -342,15 +304,414 @@
             </div>
         </div>
 
+        <!-- ================= VIEW 2: CENTRAL KITCHEN ================= -->
+        <div x-show="currentRole === 'ck'" class="space-y-6">
+            <!-- Ringkasan Central Kitchen -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+                    <p class="text-xs font-semibold text-slate-500">PO Baru (Menunggu Proses)</p>
+                    <p class="text-2xl font-black text-amber-600 mt-1" x-text="pendingPOCount"></p>
+                </div>
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+                    <p class="text-xs font-semibold text-slate-500">Total SKU Bahan Baku</p>
+                    <p class="text-2xl font-black text-slate-800 mt-1" x-text="inventory.length"></p>
+                </div>
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+                    <p class="text-xs font-semibold text-slate-500">Stok Menipis (Below Buffer)</p>
+                    <p class="text-2xl font-black text-red-600 mt-1" x-text="inventory.filter(i => i.stock <= i.minStock).length"></p>
+                </div>
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold text-slate-500">Kelola Stok Gudang</p>
+                        <button @click="openRestockModal()" class="mt-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow">
+                            <i class="fa-solid fa-plus mr-1"></i> Restock Masuk
+                        </button>
+                    </div>
+                    <div class="text-2xl text-emerald-600"><i class="fa-solid fa-warehouse"></i></div>
+                </div>
+            </div>
+
+            <!-- Antrian PO Masuk dari Seluruh Outlet -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+                    <h2 class="font-bold text-slate-800 text-sm"><i class="fa-solid fa-bell-concierge text-red-600 mr-2"></i> Antrian Purchase Order (PO) Masuk dari Outlet</h2>
+                </div>
+                <div class="p-4 overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead>
+                            <tr class="text-slate-500 border-b border-slate-100">
+                                <th class="pb-3">No. PO</th>
+                                <th class="pb-3">Outlet Pemesan</th>
+                                <th class="pb-3">Target Kirim</th>
+                                <th class="pb-3">Item Pesanan</th>
+                                <th class="pb-3">Status</th>
+                                <th class="pb-3 text-right">Tindakan CK</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            <template x-if="pos.length === 0">
+                                <tr><td colspan="6" class="py-6 text-center text-slate-400 italic">Belum ada PO masuk dari outlet.</td></tr>
+                            </template>
+                            <template x-for="po in pos" :key="po.id">
+                                <tr class="hover:bg-slate-50">
+                                    <td class="py-3 font-bold text-slate-800" x-text="po.id"></td>
+                                    <td class="py-3 font-semibold text-slate-700" x-text="getOutletName(po.outletId)"></td>
+                                    <td class="py-3 text-slate-600" x-text="formatDate(po.targetDate)"></td>
+                                    <td class="py-3">
+                                        <template x-for="it in po.items" :key="it.itemId">
+                                            <span class="inline-block bg-slate-100 px-2 py-0.5 rounded mr-1 mb-1 text-[11px]" x-text="getItemName(it.itemId) + ': ' + it.qty + ' ' + getItemUnit(it.itemId)"></span>
+                                        </template>
+                                    </td>
+                                    <td class="py-3">
+                                        <span class="px-2.5 py-1 rounded-full text-[11px] font-bold" :class="getStatusBadgeClass(po.status)" x-text="getStatusLabel(po.status)"></span>
+                                    </td>
+                                    <td class="py-3 text-right whitespace-nowrap">
+                                        <template x-if="po.status === 'PENDING'">
+                                            <button @click="openProcessPOModal(po)" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg font-bold shadow">
+                                                <i class="fa-solid fa-truck mr-1"></i> Proses & Kirim
+                                            </button>
+                                        </template>
+                                        <template x-if="po.status !== 'PENDING'">
+                                            <button @click="viewPODetail(po)" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg font-bold">Lihat Surat Jalan</button>
+                                        </template>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Stok Inventori Central Kitchen -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="p-4 border-b border-slate-100 bg-slate-50 flex flex-wrap justify-between items-center gap-2">
+                    <h2 class="font-bold text-slate-800 text-sm"><i class="fa-solid fa-cubes-stacked text-red-600 mr-2"></i> Stok Gudang Central Kitchen (Realtime)</h2>
+                    <div class="flex gap-2">
+                        <button @click="openCategoryModal()" class="bg-blue-50 text-blue-700 hover:bg-blue-100 px-3 py-1.5 rounded-xl text-xs font-bold">+ Kategori</button>
+                        <button @click="openAddItemModal()" class="bg-slate-800 hover:bg-slate-900 text-white px-3 py-1.5 rounded-xl text-xs font-bold">+ Tambah SKU</button>
+                    </div>
+                </div>
+                <div class="p-4 overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead>
+                            <tr class="text-slate-500 border-b border-slate-100">
+                                <th class="pb-3">SKU</th>
+                                <th class="pb-3">Nama Bahan Baku</th>
+                                <th class="pb-3">Kategori</th>
+                                <th class="pb-3 text-center">Stok Ready</th>
+                                <th class="pb-3 text-center">Buffer Min.</th>
+                                <th class="pb-3 text-right">Penyesuaian</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            <template x-for="item in inventory" :key="item.id">
+                                <tr class="hover:bg-slate-50">
+                                    <td class="py-3 font-mono text-slate-500" x-text="item.sku || item.id"></td>
+                                    <td class="py-3 font-bold text-slate-800" x-text="item.name"></td>
+                                    <td class="py-3 text-slate-600" x-text="item.category"></td>
+                                    <td class="py-3 text-center">
+                                        <span class="px-2.5 py-1 rounded-lg font-black" :class="item.stock <= item.minStock ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-800'" x-text="item.stock + ' ' + item.unit"></span>
+                                    </td>
+                                    <td class="py-3 text-center text-slate-500" x-text="item.minStock + ' ' + item.unit"></td>
+                                    <td class="py-3 text-right space-x-1 whitespace-nowrap">
+                                        <button @click="quickAdjustStock(item, -1)" class="bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded font-bold">-1</button>
+                                        <button @click="quickAdjustStock(item, 1)" class="bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded font-bold">+1</button>
+                                        <button @click="openEditItemModal(item)" class="text-blue-600 hover:underline font-bold ml-2">Edit</button>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= VIEW 3: AUDIT & LAPORAN ================= -->
+        <div x-show="currentRole === 'audit'" class="space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Kartu Stok (Stock Card Mutasi) -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="p-4 border-b border-slate-100 bg-slate-50">
+                        <h2 class="font-bold text-slate-800 text-sm"><i class="fa-solid fa-clock-rotate-left text-red-600 mr-2"></i> Kartu Stok (Log Mutasi Gudang)</h2>
+                    </div>
+                    <div class="p-4 overflow-x-auto max-h-[500px]">
+                        <table class="w-full text-left text-xs">
+                            <thead>
+                                <tr class="text-slate-500 border-b border-slate-100">
+                                    <th class="pb-2">Waktu</th>
+                                    <th class="pb-2">Item</th>
+                                    <th class="pb-2 text-center">Mutasi</th>
+                                    <th class="pb-2 text-center">Saldo</th>
+                                    <th class="pb-2">Referensi</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                <template x-if="stockCardLogs.length === 0">
+                                    <tr><td colspan="5" class="py-6 text-center text-slate-400 italic">Belum ada riwayat mutasi stok.</td></tr>
+                                </template>
+                                <template x-for="log in stockCardLogs" :key="log.id">
+                                    <tr>
+                                        <td class="py-2.5 text-[11px] text-slate-500" x-text="formatDateTime(log.timestamp)"></td>
+                                        <td class="py-2.5 font-semibold text-slate-800" x-text="log.itemName"></td>
+                                        <td class="py-2.5 text-center font-bold" :class="log.qty > 0 ? 'text-emerald-600' : 'text-red-600'" x-text="(log.qty > 0 ? '+' : '') + log.qty + ' ' + log.unit"></td>
+                                        <td class="py-2.5 text-center font-bold text-slate-700" x-text="log.balanceAfter"></td>
+                                        <td class="py-2.5 text-[11px] text-slate-600" x-text="log.refNo"></td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Log Seluruh Surat Jalan & Selisih -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="p-4 border-b border-slate-100 bg-slate-50">
+                        <h2 class="font-bold text-slate-800 text-sm"><i class="fa-solid fa-file-shield text-red-600 mr-2"></i> Audit Pengiriman & Selisih Penerimaan</h2>
+                    </div>
+                    <div class="p-4 overflow-x-auto max-h-[500px]">
+                        <table class="w-full text-left text-xs">
+                            <thead>
+                                <tr class="text-slate-500 border-b border-slate-100">
+                                    <th class="pb-2">No. SJ</th>
+                                    <th class="pb-2">Outlet</th>
+                                    <th class="pb-2">Status</th>
+                                    <th class="pb-2">Catatan Selisih</th>
+                                    <th class="pb-2 text-right">Cetak</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                <template x-if="deliveryNotes.length === 0">
+                                    <tr><td colspan="5" class="py-6 text-center text-slate-400 italic">Belum ada data Surat Jalan.</td></tr>
+                                </template>
+                                <template x-for="sj in deliveryNotes" :key="sj.id">
+                                    <tr>
+                                        <td class="py-2.5 font-bold text-slate-800" x-text="sj.id"></td>
+                                        <td class="py-2.5 text-slate-600" x-text="getOutletName(sj.outletId)"></td>
+                                        <td class="py-2.5">
+                                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold" :class="getSJStatusBadgeClass(sj.status)" x-text="getSJStatusLabel(sj.status)"></span>
+                                        </td>
+                                        <td class="py-2.5 text-slate-500 italic" x-text="sj.discrepancyNotes || '-'"></td>
+                                        <td class="py-2.5 text-right">
+                                            <button @click="openPrintSJModal(sj)" class="text-slate-700 hover:text-red-600 font-bold"><i class="fa-solid fa-print"></i></button>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= VIEW 4: SUPER ADMIN (ADMIN KESELURUHAN) ================= -->
+        <div x-show="currentRole === 'superadmin'" class="space-y-6">
+            <div class="bg-gradient-to-r from-slate-900 to-slate-800 text-white p-6 rounded-2xl shadow-md flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="bg-amber-400 text-slate-900 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase">Master Control</span>
+                        <h2 class="text-xl font-bold"><i class="fa-solid fa-crown text-amber-400 mr-2"></i> Super Admin — Kendali Keseluruhan</h2>
+                    </div>
+                    <p class="text-xs text-slate-300">Kelola profil & alamat Central Kitchen, daftar Outlet Resto beserta alamatnya, serta edit atau hapus seluruh data operasional (PO, Surat Jalan, Stok SKU).</p>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <button @click="superAdminTab = 'locations'" :class="superAdminTab === 'locations' ? 'bg-amber-400 text-slate-950 font-bold' : 'bg-slate-700 text-white hover:bg-slate-600'" class="px-3.5 py-2 rounded-xl text-xs transition">Outlet & Central Kitchen</button>
+                    <button @click="superAdminTab = 'inventory'" :class="superAdminTab === 'inventory' ? 'bg-amber-400 text-slate-950 font-bold' : 'bg-slate-700 text-white hover:bg-slate-600'" class="px-3.5 py-2 rounded-xl text-xs transition">Master Produk & Kategori</button>
+                    <button @click="superAdminTab = 'transactions'" :class="superAdminTab === 'transactions' ? 'bg-amber-400 text-slate-950 font-bold' : 'bg-slate-700 text-white hover:bg-slate-600'" class="px-3.5 py-2 rounded-xl text-xs transition">Semua PO & Surat Jalan</button>
+                </div>
+            </div>
+
+            <!-- TAB 1 SUPER ADMIN: LOKASI (CENTRAL KITCHEN & OUTLET RESTO) -->
+            <div x-show="superAdminTab === 'locations'" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Profil Central Kitchen -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+                    <div class="p-4 border-b border-slate-100 bg-slate-50">
+                        <h3 class="font-bold text-slate-800 text-sm"><i class="fa-solid fa-industry text-red-600 mr-2"></i> Profil & Alamat Central Kitchen</h3>
+                    </div>
+                    <div class="p-5 space-y-4 text-xs flex-1">
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Nama Central Kitchen / Perusahaan</label>
+                            <input type="text" x-model="ckProfileForm.name" class="w-full border border-slate-300 rounded-xl p-2.5 bg-slate-50 font-bold">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Sub-Judul / Divisi</label>
+                            <input type="text" x-model="ckProfileForm.subtitle" class="w-full border border-slate-300 rounded-xl p-2.5 bg-slate-50 font-medium">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Alamat Lengkap Central Kitchen</label>
+                            <textarea x-model="ckProfileForm.address" rows="3" class="w-full border border-slate-300 rounded-xl p-2.5 bg-slate-50 font-medium"></textarea>
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">No. Telepon / Kontak Pusat</label>
+                            <input type="text" x-model="ckProfileForm.phone" class="w-full border border-slate-300 rounded-xl p-2.5 bg-slate-50 font-medium">
+                        </div>
+                        <button @click="saveCKProfile()" class="w-full py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold shadow transition">
+                            <i class="fa-solid fa-floppy-disk mr-1"></i> Simpan Profil Central Kitchen
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Manajemen Outlet Resto -->
+                <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+                    <div class="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+                        <h3 class="font-bold text-slate-800 text-sm"><i class="fa-solid fa-store text-red-600 mr-2"></i> Daftar Outlet Resto & Alamat Pengiriman</h3>
+                        <button @click="openOutletModal()" class="bg-slate-800 hover:bg-slate-900 text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow flex items-center gap-1.5">
+                            <i class="fa-solid fa-plus"></i> Tambah Outlet Baru
+                        </button>
+                    </div>
+                    <div class="p-4 overflow-x-auto">
+                        <table class="w-full text-left text-xs">
+                            <thead>
+                                <tr class="text-slate-500 border-b border-slate-100">
+                                    <th class="pb-2.5">Kode</th>
+                                    <th class="pb-2.5">Nama Outlet Resto</th>
+                                    <th class="pb-2.5">Alamat Lengkap</th>
+                                    <th class="pb-2.5">PIC / Telepon</th>
+                                    <th class="pb-2.5 text-right">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                <template x-for="out in outlets" :key="out.id">
+                                    <tr class="hover:bg-slate-50">
+                                        <td class="py-3 font-mono font-bold text-slate-600" x-text="out.id"></td>
+                                        <td class="py-3 font-bold text-slate-800" x-text="out.name"></td>
+                                        <td class="py-3 text-slate-600 max-w-xs" x-text="out.address || '-'"></td>
+                                        <td class="py-3 text-slate-600" x-text="out.phone || '-'"></td>
+                                        <td class="py-3 text-right space-x-1 whitespace-nowrap">
+                                            <button @click="openEditOutletModal(out)" class="bg-blue-50 text-blue-600 hover:bg-blue-100 px-2.5 py-1 rounded-lg font-bold"><i class="fa-solid fa-pen"></i> Edit</button>
+                                            <button @click="deleteOutlet(out.id)" class="bg-rose-50 text-rose-600 hover:bg-rose-100 px-2.5 py-1 rounded-lg font-bold"><i class="fa-solid fa-trash"></i> Hapus</button>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2 SUPER ADMIN: MASTER PRODUK & KATEGORI -->
+            <div x-show="superAdminTab === 'inventory'" class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="p-4 border-b border-slate-100 bg-slate-50 flex flex-wrap justify-between items-center gap-2">
+                    <h3 class="font-bold text-slate-800 text-sm"><i class="fa-solid fa-boxes-stacked text-red-600 mr-2"></i> Master Data Produk SKU & Kategori</h3>
+                    <div class="flex gap-2">
+                        <button @click="openCategoryModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold"><i class="fa-solid fa-tags mr-1"></i> Kelola Kategori</button>
+                        <button @click="openAddItemModal()" class="bg-slate-800 hover:bg-slate-900 text-white px-3 py-1.5 rounded-xl text-xs font-bold"><i class="fa-solid fa-plus mr-1"></i> Tambah Produk SKU</button>
+                    </div>
+                </div>
+                <div class="p-4 overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead>
+                            <tr class="text-slate-500 border-b border-slate-100">
+                                <th class="pb-2.5">SKU</th>
+                                <th class="pb-2.5">Nama Produk</th>
+                                <th class="pb-2.5">Kategori</th>
+                                <th class="pb-2.5 text-center">Stok Saat Ini</th>
+                                <th class="pb-2.5 text-center">Buffer Min.</th>
+                                <th class="pb-2.5 text-right">Aksi Master</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            <template x-for="inv in inventory" :key="inv.id">
+                                <tr class="hover:bg-slate-50">
+                                    <td class="py-3 font-mono text-slate-500" x-text="inv.sku || inv.id"></td>
+                                    <td class="py-3 font-bold text-slate-800" x-text="inv.name"></td>
+                                    <td class="py-3 text-slate-600" x-text="inv.category"></td>
+                                    <td class="py-3 text-center font-bold text-emerald-700" x-text="inv.stock + ' ' + inv.unit"></td>
+                                    <td class="py-3 text-center text-slate-600" x-text="inv.minStock + ' ' + inv.unit"></td>
+                                    <td class="py-3 text-right space-x-1">
+                                        <button @click="openEditItemModal(inv)" class="bg-blue-50 text-blue-600 hover:bg-blue-100 px-2.5 py-1 rounded-lg font-bold"><i class="fa-solid fa-pen"></i> Edit</button>
+                                        <button @click="deleteInventoryItem(inv.id)" class="bg-rose-50 text-rose-600 hover:bg-rose-100 px-2.5 py-1 rounded-lg font-bold"><i class="fa-solid fa-trash"></i> Hapus</button>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TAB 3 SUPER ADMIN: SEMUA PO & SURAT JALAN -->
+            <div x-show="superAdminTab === 'transactions'" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Master PO -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+                        <h3 class="font-bold text-slate-800 text-sm"><i class="fa-solid fa-file-invoice text-red-600 mr-2"></i> Master Seluruh Purchase Order (PO)</h3>
+                        <span class="text-xs bg-slate-200 text-slate-700 px-2 py-0.5 rounded font-bold" x-text="pos.length + ' PO'"></span>
+                    </div>
+                    <div class="p-4 overflow-x-auto max-h-[500px]">
+                        <table class="w-full text-left text-xs">
+                            <thead>
+                                <tr class="text-slate-500 border-b border-slate-100">
+                                    <th class="pb-2">No. PO</th>
+                                    <th class="pb-2">Outlet</th>
+                                    <th class="pb-2">Status</th>
+                                    <th class="pb-2 text-right">Kontrol Admin</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                <template x-for="po in pos" :key="po.id">
+                                    <tr>
+                                        <td class="py-2.5 font-bold text-slate-800" x-text="po.id"></td>
+                                        <td class="py-2.5 text-slate-600" x-text="getOutletName(po.outletId)"></td>
+                                        <td class="py-2.5">
+                                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold" :class="getStatusBadgeClass(po.status)" x-text="getStatusLabel(po.status)"></span>
+                                        </td>
+                                        <td class="py-2.5 text-right space-x-1 whitespace-nowrap">
+                                            <button @click="openSuperAdminEditPO(po)" class="bg-blue-50 text-blue-600 hover:bg-blue-100 px-2 py-1 rounded font-bold"><i class="fa-solid fa-pen"></i> Edit</button>
+                                            <button @click="deletePO(po.id)" class="bg-rose-50 text-rose-600 hover:bg-rose-100 px-2 py-1 rounded font-bold"><i class="fa-solid fa-trash"></i> Hapus</button>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Master Surat Jalan -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+                        <h3 class="font-bold text-slate-800 text-sm"><i class="fa-solid fa-truck-fast text-red-600 mr-2"></i> Master Seluruh Surat Jalan</h3>
+                        <span class="text-xs bg-slate-200 text-slate-700 px-2 py-0.5 rounded font-bold" x-text="deliveryNotes.length + ' SJ'"></span>
+                    </div>
+                    <div class="p-4 overflow-x-auto max-h-[500px]">
+                        <table class="w-full text-left text-xs">
+                            <thead>
+                                <tr class="text-slate-500 border-b border-slate-100">
+                                    <th class="pb-2">No. SJ</th>
+                                    <th class="pb-2">Tujuan Outlet</th>
+                                    <th class="pb-2">Status</th>
+                                    <th class="pb-2 text-right">Kontrol Admin</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                <template x-for="sj in deliveryNotes" :key="sj.id">
+                                    <tr>
+                                        <td class="py-2.5 font-bold text-slate-800" x-text="sj.id"></td>
+                                        <td class="py-2.5 text-slate-600" x-text="getOutletName(sj.outletId)"></td>
+                                        <td class="py-2.5">
+                                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold" :class="getSJStatusBadgeClass(sj.status)" x-text="getSJStatusLabel(sj.status)"></span>
+                                        </td>
+                                        <td class="py-2.5 text-right space-x-1 whitespace-nowrap">
+                                            <button @click="openPrintSJModal(sj)" class="bg-slate-100 text-slate-700 hover:bg-slate-200 px-2 py-1 rounded font-bold"><i class="fa-solid fa-print"></i></button>
+                                            <button @click="openSuperAdminEditSJ(sj)" class="bg-blue-50 text-blue-600 hover:bg-blue-100 px-2 py-1 rounded font-bold"><i class="fa-solid fa-pen"></i> Edit</button>
+                                            <button @click="deleteSJ(sj.id)" class="bg-rose-50 text-rose-600 hover:bg-rose-100 px-2 py-1 rounded font-bold"><i class="fa-solid fa-trash"></i> Hapus</button>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </main>
-
-    <!-- ================= MODALS ================= -->
-
-    <!-- Modal Buat PO Baru (Resto) -->
+    <!-- Modal Buat / Edit PO (Resto) -->
     <div x-show="showCreatePOModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" x-cloak>
         <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden border border-slate-200">
             <div class="bg-red-800 text-white p-4 flex justify-between items-center">
-                <h3 class="font-bold text-base"><i class="fa-solid fa-cart-plus mr-2"></i> Buat Purchase Order (PO) ke Central Kitchen</h3>
+                <h3 class="font-bold text-base">
+                    <i class="fa-solid fa-cart-plus mr-2"></i>
+                    <span x-text="editingRestoPOId ? 'Edit Purchase Order (' + editingRestoPOId + ')' : 'Buat Purchase Order (PO) ke Central Kitchen'"></span>
+                </h3>
                 <button @click="showCreatePOModal = false" class="text-white hover:text-red-200 text-lg font-bold">&times;</button>
             </div>
             <div class="p-6 space-y-4 max-h-[75vh] overflow-y-auto text-xs">
@@ -393,7 +754,7 @@
             </div>
             <div class="bg-slate-50 p-4 border-t border-slate-200 flex justify-end gap-3">
                 <button @click="showCreatePOModal = false" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-300">Batal</button>
-                <button @click="submitNewPO()" class="px-5 py-2 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 shadow">Kirim PO ke CK</button>
+                <button @click="submitNewPO()" class="px-5 py-2 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 shadow" x-text="editingRestoPOId ? 'Simpan Perubahan PO' : 'Kirim PO ke CK'"></button>
             </div>
         </div>
     </div>
@@ -491,41 +852,54 @@
     <div x-show="showReceiveModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" x-cloak>
         <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden border border-slate-200">
             <div class="bg-emerald-800 text-white p-4 flex justify-between items-center">
-                <h3 class="font-bold text-base"><i class="fa-solid fa-clipboard-check mr-2"></i> Penerimaan Barang di Resto Outlet</h3>
+                <h3 class="font-bold text-base"><i class="fa-solid fa-clipboard-check mr-2"></i> Konfirmasi Terima Barang di Resto</h3>
                 <button @click="showReceiveModal = false" class="text-white hover:text-emerald-200 text-lg font-bold">&times;</button>
             </div>
             <div class="p-6 space-y-4 max-h-[75vh] overflow-y-auto text-xs">
                 <template x-if="activeSJForReceive">
-                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 flex justify-between">
+                    <div class="bg-emerald-50 p-3.5 rounded-xl border border-emerald-200 flex flex-col sm:flex-row justify-between gap-2">
                         <div>
                             <p class="font-bold text-slate-800">No. Surat Jalan: <span class="text-emerald-700" x-text="activeSJForReceive.id"></span></p>
                             <p class="text-slate-600">Kurir Pengantar: <span class="font-semibold" x-text="activeSJForReceive.driverName + ' (' + activeSJForReceive.plateOrResi + ')'"></span></p>
+                        </div>
+                        <div class="sm:text-right">
+                            <span class="inline-block bg-white text-emerald-800 border border-emerald-200 px-2.5 py-1 rounded-lg text-[11px] font-bold">
+                                Langkah 1: Cek Jumlah &bull; Langkah 2: Isi Nama &bull; Langkah 3: Simpan
+                            </span>
                         </div>
                     </div>
                 </template>
 
                 <div>
-                    <label class="block font-bold text-slate-700 mb-1">Nama Staff / Manager Outlet yang Menerima</label>
-                    <input type="text" x-model="receiveReceiverName" placeholder="Contoh: Budi (Manager Outlet Jaksel)" class="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50 font-bold">
-                </div>
-
-                <div>
-                    <label class="block font-bold text-slate-700 mb-2">Periksa Kuantitas Fisik yang Diterima</label>
-                    <table class="w-full text-left border-collapse text-xs">
+                    <div class="flex flex-wrap justify-between items-center gap-2 mb-2">
+                        <label class="font-bold text-slate-700">1. Periksa Jumlah Barang yang Tiba di Outlet:</label>
+                        <button type="button" @click="receiveItemsForm.forEach(i => i.qtyReceived = i.qtyShipped)" class="bg-emerald-100 hover:bg-emerald-200 text-emerald-800 px-2.5 py-1 rounded-lg font-bold text-[11px] transition">
+                            <i class="fa-solid fa-check mr-1"></i> Sesuai Semua (Samakan dengan Kiriman)
+                        </button>
+                    </div>
+                    <table class="w-full text-left border-collapse text-xs border border-slate-200 rounded-lg overflow-hidden">
                         <thead>
                             <tr class="bg-slate-100 text-slate-600 border-b border-slate-200">
-                                <th class="p-2.5">Bahan Baku</th>
+                                <th class="p-2.5">Nama Bahan Baku</th>
                                 <th class="p-2.5 text-center">Dikirim CK</th>
-                                <th class="p-2.5 text-center">Diterima Fisik Resto</th>
+                                <th class="p-2.5 text-center">Jumlah Diterima Fisik</th>
+                                <th class="p-2.5 text-center">Status</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
                             <template x-for="item in receiveItemsForm" :key="item.itemId">
-                                <tr>
+                                <tr :class="item.qtyReceived !== item.qtyShipped ? 'bg-amber-50/70' : ''">
                                     <td class="p-2.5 font-semibold text-slate-800" x-text="getItemName(item.itemId)"></td>
                                     <td class="p-2.5 text-center font-bold text-slate-700" x-text="item.qtyShipped + ' ' + getItemUnit(item.itemId)"></td>
                                     <td class="p-2.5 text-center">
-                                        <input type="number" min="0" x-model.number="item.qtyReceived" class="w-24 border border-slate-300 rounded-lg p-1.5 text-center font-bold bg-white text-xs">
+                                        <div class="inline-flex items-center gap-1">
+                                            <input type="number" min="0" x-model.number="item.qtyReceived" class="w-20 border border-slate-300 rounded-lg p-1.5 text-center font-bold bg-white text-xs focus:ring-2 focus:ring-emerald-500">
+                                            <span class="text-slate-500 font-medium" x-text="getItemUnit(item.itemId)"></span>
+                                        </div>
+                                    </td>
+                                    <td class="p-2.5 text-center">
+                                        <span x-show="item.qtyReceived === item.qtyShipped" class="text-emerald-700 font-bold text-[11px]"><i class="fa-solid fa-circle-check"></i> Sesuai</span>
+                                        <span x-show="item.qtyReceived !== item.qtyShipped" class="text-amber-700 font-bold text-[11px]"><i class="fa-solid fa-triangle-exclamation"></i> Selisih (<span x-text="item.qtyReceived - item.qtyShipped"></span>)</span>
                                     </td>
                                 </tr>
                             </template>
@@ -534,13 +908,84 @@
                 </div>
 
                 <div>
-                    <label class="block font-semibold text-slate-700 mb-1">Catatan Selisih / Kerusakan (Jika ada)</label>
-                    <textarea x-model="receiveDiscrepancyNotes" rows="2" placeholder="Contoh: Diterima utuh, kemasan baik / 1 pouch bocor" class="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50 font-medium"></textarea>
+                    <label class="block font-bold text-slate-700 mb-1">2. Nama Staff / Manager Outlet yang Menerima <span class="text-red-600">*</span></label>
+                    <input type="text" x-model="receiveReceiverName" placeholder="Ketik nama Anda di sini (Contoh: Budi - Manager Outlet)" class="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50 font-bold focus:ring-2 focus:ring-emerald-500">
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">3. Catatan Penerimaan / Keterangan Selisih (Opsional)</label>
+                    <textarea x-model="receiveDiscrepancyNotes" rows="2" placeholder="Contoh: Barang diterima lengkap & kondisi baik" class="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50 font-medium"></textarea>
                 </div>
             </div>
             <div class="bg-slate-50 p-4 border-t border-slate-200 flex justify-end gap-3">
                 <button @click="showReceiveModal = false" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-300">Batal</button>
-                <button @click="confirmGoodsReceipt()" class="px-5 py-2 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 shadow">Konfirmasi Penerimaan Selesai</button>
+                <button @click="confirmGoodsReceipt()" class="px-5 py-2 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 shadow flex items-center gap-1.5">
+                    <i class="fa-solid fa-check-double"></i> Simpan & Selesaikan Penerimaan
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Detail PO (Saat PO belum diterbitkan Surat Jalan oleh CK) -->
+    <div x-show="showPODetailModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" x-cloak>
+        <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200">
+            <div class="bg-slate-800 text-white p-4 flex justify-between items-center">
+                <h3 class="font-bold text-base"><i class="fa-solid fa-file-invoice mr-2"></i> Detail Purchase Order (PO)</h3>
+                <button @click="showPODetailModal = false" class="text-white hover:text-slate-300 text-lg font-bold">&times;</button>
+            </div>
+            <template x-if="selectedPOForDetail">
+                <div class="p-6 space-y-4 text-xs">
+                    <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-1">
+                        <div class="flex justify-between">
+                            <span class="text-slate-500">No. PO:</span>
+                            <span class="font-bold text-slate-800" x-text="selectedPOForDetail.id"></span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-500">Outlet Pemesan:</span>
+                            <span class="font-bold text-slate-800" x-text="getOutletName(selectedPOForDetail.outletId)"></span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-500">Target Kirim:</span>
+                            <span class="font-bold text-slate-800" x-text="formatDate(selectedPOForDetail.targetDate)"></span>
+                        </div>
+                        <div class="flex justify-between items-center pt-1">
+                            <span class="text-slate-500">Status Saat Ini:</span>
+                            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold" :class="getStatusBadgeClass(selectedPOForDetail.status)" x-text="getStatusLabel(selectedPOForDetail.status)"></span>
+                        </div>
+                    </div>
+
+                    <div class="bg-amber-50 border border-amber-200 text-amber-900 p-3 rounded-xl text-[11px]">
+                        <i class="fa-solid fa-circle-info mr-1"></i> Surat Jalan akan otomatis muncul setelah pihak <b>Central Kitchen</b> memproses & mengirim PO ini.
+                    </div>
+
+                    <div>
+                        <p class="font-bold text-slate-700 mb-2">Daftar Bahan Baku yang Dipesan:</p>
+                        <table class="w-full text-left border-collapse border border-slate-200">
+                            <thead>
+                                <tr class="bg-slate-100 text-slate-600 border-b border-slate-200">
+                                    <th class="p-2">Nama Item</th>
+                                    <th class="p-2 text-center">Jumlah Diminta</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                <template x-for="it in selectedPOForDetail.items" :key="it.itemId">
+                                    <tr>
+                                        <td class="p-2 font-semibold text-slate-800" x-text="getItemName(it.itemId)"></td>
+                                        <td class="p-2 text-center font-bold" x-text="it.qty + ' ' + getItemUnit(it.itemId)"></td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div>
+                        <p class="font-semibold text-slate-700">Catatan Outlet:</p>
+                        <p class="text-slate-600 bg-slate-50 p-2.5 rounded-lg border border-slate-200 mt-1" x-text="selectedPOForDetail.notes || 'Tidak ada catatan'"></p>
+                    </div>
+                </div>
+            </template>
+            <div class="bg-slate-50 p-4 border-t border-slate-200 flex justify-end">
+                <button @click="showPODetailModal = false" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-300">Tutup</button>
             </div>
         </div>
     </div>
@@ -663,9 +1108,9 @@
             <div id="printable-area" class="p-8 space-y-6 text-slate-800 bg-white">
                 <div class="flex justify-between items-start border-b-2 border-slate-800 pb-4">
                     <div>
-                        <h2 class="text-2xl font-black tracking-tight text-red-800">WARUNG SAMBAL SAMUDA NUSANTARA</h2>
-                        <p class="text-xs text-slate-600">Central Kitchen & Distribution Center</p>
-                        <p class="text-[10px] text-slate-500">Jl. Raya Logistik Kuliner No. 88, Jakarta Selatan</p>
+                        <h2 class="text-2xl font-black tracking-tight text-red-800 uppercase" x-text="ckProfile.name"></h2>
+                        <p class="text-xs text-slate-600 font-semibold" x-text="ckProfile.subtitle"></p>
+                        <p class="text-[10px] text-slate-500" x-text="ckProfile.address + (ckProfile.phone ? ' | Telp: ' + ckProfile.phone : '')"></p>
                     </div>
                     <div class="text-right">
                         <h1 class="text-xl font-bold tracking-wide text-slate-800">SURAT JALAN</h1>
@@ -678,6 +1123,7 @@
                     <div>
                         <p class="text-slate-500 font-semibold">TUJUAN PENGIRIMAN OUTLET:</p>
                         <p class="font-bold text-slate-800 text-sm" x-text="selectedSJForPrint ? getOutletName(selectedSJForPrint.outletId) : ''"></p>
+                        <p class="text-[11px] text-slate-600 mb-1" x-text="selectedSJForPrint ? getOutletAddress(selectedSJForPrint.outletId) : ''"></p>
                         <p class="text-slate-600 mt-1">Penerima: <span class="font-bold text-slate-800" x-text="selectedSJForPrint ? (selectedSJForPrint.receiverName || 'Manager Outlet') : ''"></span></p>
                         <p class="text-slate-600">No. Referensi PO: <span class="font-mono font-bold" x-text="selectedSJForPrint ? selectedSJForPrint.poId : ''"></span></p>
                     </div>
@@ -710,24 +1156,32 @@
                     </table>
                 </div>
 
-                <div class="grid grid-cols-3 gap-6 pt-8 text-center text-xs">
-                    <div class="space-y-12">
+                <div class="print-signatures grid grid-cols-3 gap-6 pt-8 text-center text-xs">
+                    <div class="flex flex-col justify-between">
                         <p class="font-semibold text-slate-700">Diserahkan Oleh (Central Kitchen)</p>
+                        <div class="print-sign-space h-14"></div>
                         <p class="font-bold border-b border-slate-400 pb-1" x-text="'(' + (selectedSJForPrint ? (selectedSJForPrint.senderName || 'Staf Gudang CK') : 'Staf Gudang CK') + ')'"></p>
                     </div>
-                    <div class="space-y-12">
+                    <div class="flex flex-col justify-between">
                         <p class="font-semibold text-slate-700">Kurir / Driver Pengantar</p>
+                        <div class="print-sign-space h-14"></div>
                         <p class="font-bold border-b border-slate-400 pb-1" x-text="'(' + (selectedSJForPrint ? selectedSJForPrint.driverName : 'Kurir') + ')'"></p>
                     </div>
-                    <div class="space-y-12">
+                    <div class="flex flex-col justify-between">
                         <p class="font-semibold text-slate-700">Diterima Oleh (Outlet Resto)</p>
+                        <div class="print-sign-space h-14"></div>
                         <p class="font-bold border-b border-slate-400 pb-1" x-text="'(' + (selectedSJForPrint ? (selectedSJForPrint.receiverName || 'Manager Outlet') : 'Manager Outlet') + ')'"></p>
                     </div>
                 </div>
             </div>
 
             <div class="bg-slate-50 p-4 border-t border-slate-200 flex justify-end gap-3 no-print">
-                <button @click="showPrintSJModal = false" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-300">Tutup</button>
+                <button @click="closePrintModal()" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-300" x-text="isPrintingChecklist ? 'Kembali' : 'Tutup'"></button>
+                <template x-if="selectedSJForPrint && selectedSJForPrint.status === 'IN_TRANSIT' && !isPrintingChecklist && currentRole === 'resto'">
+                    <button @click="showPrintSJModal = false; openReceiveModal(selectedSJForPrint)" class="px-5 py-2 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 shadow flex items-center gap-2">
+                        <i class="fa-solid fa-box-open"></i> Terima Barang Ini
+                    </button>
+                </template>
                 <button @click="triggerPrint()" class="px-5 py-2 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 shadow flex items-center gap-2">
                     <i class="fa-solid fa-print"></i> Cetak Dokumen (Print / PDF)
                 </button>
@@ -735,15 +1189,187 @@
         </div>
     </div>
 
+    <!-- Modal Tambah / Edit Outlet Resto (Super Admin) -->
+    <div x-show="showOutletModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" x-cloak>
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200">
+            <div class="bg-slate-900 text-white p-4 flex justify-between items-center">
+                <h3 class="font-bold text-base" x-text="isEditingOutlet ? 'Edit Data Outlet Resto' : 'Tambah Outlet Resto Baru'"></h3>
+                <button @click="showOutletModal = false" class="text-white hover:text-slate-300 text-lg font-bold">&times;</button>
+            </div>
+            <div class="p-6 space-y-4 text-xs">
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Kode / ID Outlet</label>
+                    <input type="text" x-model="outletForm.id" :disabled="isEditingOutlet" placeholder="Contoh: OUT-04" class="w-full border border-slate-300 rounded-lg p-2.5 font-mono font-bold" :class="isEditingOutlet ? 'bg-slate-100 text-slate-500' : 'bg-slate-50'">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Nama Outlet Resto</label>
+                    <input type="text" x-model="outletForm.name" placeholder="Contoh: Outlet Samuda - Bogor (Pajajaran)" class="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50 font-bold">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Alamat Lengkap Resto</label>
+                    <textarea x-model="outletForm.address" rows="3" placeholder="Jl. Raya Pajajaran No. 12, Bogor" class="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50 font-medium"></textarea>
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">No. Telepon / PIC Outlet</label>
+                    <input type="text" x-model="outletForm.phone" placeholder="0812-3456-7890 (Pak Andi)" class="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50 font-medium">
+                </div>
+            </div>
+            <div class="bg-slate-50 p-4 border-t border-slate-200 flex justify-end gap-3">
+                <button @click="showOutletModal = false" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-300">Batal</button>
+                <button @click="saveOutletForm()" class="px-5 py-2 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 shadow">Simpan Data Outlet</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Super Admin Edit PO -->
+    <div x-show="showAdminEditPOModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" x-cloak>
+        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden border border-slate-200">
+            <div class="bg-blue-900 text-white p-4 flex justify-between items-center">
+                <h3 class="font-bold text-base"><i class="fa-solid fa-pen-to-square mr-2"></i> Super Admin: Edit Purchase Order</h3>
+                <button @click="showAdminEditPOModal = false" class="text-white hover:text-blue-200 text-lg font-bold">&times;</button>
+            </div>
+            <template x-if="adminEditingPO">
+                <div class="p-6 space-y-4 max-h-[75vh] overflow-y-auto text-xs">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Outlet Pemesan</label>
+                            <select x-model="adminEditingPO.outletId" class="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50 font-bold">
+                                <template x-for="o in outlets" :key="o.id">
+                                    <option :value="o.id" x-text="o.name"></option>
+                                </template>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Target Tanggal Kirim</label>
+                            <input type="date" x-model="adminEditingPO.targetDate" class="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50 font-medium">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Status PO</label>
+                            <select x-model="adminEditingPO.status" class="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50 font-bold">
+                                <option value="PENDING">Menunggu Verifikasi CK</option>
+                                <option value="SHIPPED">Dalam Pengiriman</option>
+                                <option value="COMPLETED">Diterima Outlet (Selesai)</option>
+                                <option value="CANCELLED">Dibatalkan</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-2">Daftar Item Pesanan PO:</label>
+                        <div class="space-y-2">
+                            <template x-for="(item, idx) in adminEditingPO.items" :key="idx">
+                                <div class="flex items-center gap-2 bg-slate-50 p-2 rounded-xl border">
+                                    <select x-model="item.itemId" class="flex-1 border border-slate-300 rounded-lg p-2 bg-white font-medium">
+                                        <template x-for="inv in inventory" :key="inv.id">
+                                            <option :value="inv.id" x-text="inv.name"></option>
+                                        </template>
+                                    </select>
+                                    <input type="number" min="1" x-model.number="item.qty" class="w-24 border border-slate-300 rounded-lg p-2 text-center font-bold bg-white">
+                                    <button @click="adminEditingPO.items.splice(idx, 1)" class="text-red-600 p-2 font-bold"><i class="fa-solid fa-trash"></i></button>
+                                </div>
+                            </template>
+                        </div>
+                        <button @click="adminEditingPO.items.push({ itemId: inventory[0]?.id || '', qty: 1 })" class="mt-2 text-blue-600 font-bold hover:underline">+ Tambah Item PO</button>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Catatan PO</label>
+                        <textarea x-model="adminEditingPO.notes" rows="2" class="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50"></textarea>
+                    </div>
+                </div>
+            </template>
+            <div class="bg-slate-50 p-4 border-t border-slate-200 flex justify-end gap-3">
+                <button @click="showAdminEditPOModal = false" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-xl font-bold">Batal</button>
+                <button @click="saveAdminEditedPO()" class="px-5 py-2 bg-blue-700 text-white rounded-xl font-bold hover:bg-blue-800 shadow">Simpan Perubahan PO</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Super Admin Edit Surat Jalan -->
+    <div x-show="showAdminEditSJModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" x-cloak>
+        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden border border-slate-200">
+            <div class="bg-blue-900 text-white p-4 flex justify-between items-center">
+                <h3 class="font-bold text-base"><i class="fa-solid fa-pen-to-square mr-2"></i> Super Admin: Edit Surat Jalan</h3>
+                <button @click="showAdminEditSJModal = false" class="text-white hover:text-blue-200 text-lg font-bold">&times;</button>
+            </div>
+            <template x-if="adminEditingSJ">
+                <div class="p-6 space-y-4 max-h-[75vh] overflow-y-auto text-xs">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Outlet Tujuan</label>
+                            <select x-model="adminEditingSJ.outletId" class="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50 font-bold">
+                                <template x-for="o in outlets" :key="o.id">
+                                    <option :value="o.id" x-text="o.name"></option>
+                                </template>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Status Surat Jalan</label>
+                            <select x-model="adminEditingSJ.status" class="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50 font-bold">
+                                <option value="IN_TRANSIT">Dalam Perjalanan</option>
+                                <option value="DELIVERED">Telah Diterima Resto</option>
+                                <option value="DISCREPANCY">Diterima Ada Selisih</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Jenis Kurir</label>
+                            <input type="text" x-model="adminEditingSJ.courierType" class="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Nama Driver & Plat/Resi</label>
+                            <div class="flex gap-2">
+                                <input type="text" x-model="adminEditingSJ.driverName" class="w-1/2 border border-slate-300 rounded-lg p-2.5 bg-slate-50">
+                                <input type="text" x-model="adminEditingSJ.plateOrResi" class="w-1/2 border border-slate-300 rounded-lg p-2.5 bg-slate-50">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Pengirim (CK)</label>
+                            <input type="text" x-model="adminEditingSJ.senderName" class="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Penerima (Outlet)</label>
+                            <input type="text" x-model="adminEditingSJ.receiverName" class="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-2">Item & Kuantitas Surat Jalan:</label>
+                        <div class="space-y-2">
+                            <template x-for="(item, idx) in adminEditingSJ.items" :key="idx">
+                                <div class="flex items-center gap-2 bg-slate-50 p-2 rounded-xl border">
+                                    <span class="flex-1 font-bold text-slate-700" x-text="getItemName(item.itemId)"></span>
+                                    <label class="text-[10px] text-slate-500">Kirim:</label>
+                                    <input type="number" min="0" x-model.number="item.qtyShipped" class="w-20 border border-slate-300 rounded-lg p-1.5 text-center font-bold bg-white">
+                                    <label class="text-[10px] text-slate-500">Terima:</label>
+                                    <input type="number" min="0" x-model.number="item.qtyReceived" class="w-20 border border-slate-300 rounded-lg p-1.5 text-center font-bold bg-white">
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+            </template>
+            <div class="bg-slate-50 p-4 border-t border-slate-200 flex justify-end gap-3">
+                <button @click="showAdminEditSJModal = false" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-xl font-bold">Batal</button>
+                <button @click="saveAdminEditedSJ()" class="px-5 py-2 bg-blue-700 text-white rounded-xl font-bold hover:bg-blue-800 shadow">Simpan Perubahan SJ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Toast Notification (Pengganti alert() agar tidak terblokir di iframe / mobile) -->
+    <div x-show="toastMessage" x-transition class="fixed bottom-5 right-5 z-[100] max-w-sm w-full bg-slate-900 text-white px-4 py-3.5 rounded-2xl shadow-2xl border border-slate-700 flex items-center justify-between gap-3 no-print" x-cloak>
+        <div class="flex items-center gap-2.5 text-xs font-semibold">
+            <i class="fa-solid fa-circle-info text-amber-400 text-base"></i>
+            <span x-text="toastMessage"></span>
+        </div>
+        <button @click="toastMessage = ''" class="text-slate-400 hover:text-white font-bold text-base">&times;</button>
+    </div>
+
     <!-- FIREBASE APP & SDK MODULES -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, doc, getDocs, setDoc, updateDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Expose Firebase tools globally so Alpine.js can access them reliably
         window.firebaseModules = {
-            initializeApp, getAuth, signInAnonymously, onAuthStateChanged,
+            initializeApp, getApps, getApp, getAuth, signInAnonymously, onAuthStateChanged,
             getFirestore, collection, doc, getDocs, setDoc, updateDoc, deleteDoc, onSnapshot
         };
 
@@ -756,13 +1382,27 @@
         function scmApp() {
             return {
                 currentRole: 'resto',
+                superAdminTab: 'locations',
                 selectedOutletId: 'OUT-01',
                 isCloudConnected: false,
 
+                ckProfile: {
+                    name: 'WARUNG SAMBAL SAMUDA NUSANTARA',
+                    subtitle: 'Central Kitchen & Distribution Center',
+                    address: 'Jl. Raya Logistik Kuliner No. 88, Jakarta Selatan',
+                    phone: '021-8899-7766'
+                },
+                ckProfileForm: {
+                    name: 'WARUNG SAMBAL SAMUDA NUSANTARA',
+                    subtitle: 'Central Kitchen & Distribution Center',
+                    address: 'Jl. Raya Logistik Kuliner No. 88, Jakarta Selatan',
+                    phone: '021-8899-7766'
+                },
+
                 outlets: [
-                    { id: 'OUT-01', name: 'Outlet Samuda - Jaksel (Kemang)' },
-                    { id: 'OUT-02', name: 'Outlet Samuda - Bandung (Dago)' },
-                    { id: 'OUT-03', name: 'Outlet Samuda - Surabaya (Gubeng)' }
+                    { id: 'OUT-01', name: 'Outlet Samuda - Jaksel (Kemang)', address: 'Jl. Kemang Raya No. 45, Jakarta Selatan', phone: '0812-1111-2222' },
+                    { id: 'OUT-02', name: 'Outlet Samuda - Bandung (Dago)', address: 'Jl. Ir. H. Juanda No. 112, Bandung', phone: '0812-3333-4444' },
+                    { id: 'OUT-03', name: 'Outlet Samuda - Surabaya (Gubeng)', address: 'Jl. Raya Gubeng No. 78, Surabaya', phone: '0812-5555-6666' }
                 ],
 
                 categories: ['Bahan Baku Fresh', 'Sambal Base Olahan', 'Olahan Daging', 'Packaging'],
@@ -774,483 +1414,812 @@
                 db: null,
                 auth: null,
                 userId: null,
-                // Shared Path untuk sinkronisasi real-time antar seluruh perangkat & outlet
+                useRootCollections: true,
                 appId: 'scm-sambal-samuda-live',
+                getColRef(colName) {
+                    const fb = window.firebaseModules;
+                    if (this.useRootCollections) {
+                        return fb.collection(this.db, colName);
+                    }
+                    return fb.collection(this.db, 'artifacts', this.appId, 'public', 'data', colName);
+                },
+                getDocRef(colName, docId) {
+                    const fb = window.firebaseModules;
+                    if (this.useRootCollections) {
+                        return fb.doc(this.db, colName, docId);
+                    }
+                    return fb.doc(this.db, 'artifacts', this.appId, 'public', 'data', colName, docId);
+                },
 
+                async initFirebaseAndData() {
+                    const startFirebase = async () => {
+                        try {
+                            const fb = window.firebaseModules;
+                            if (!fb) return;
+
+                            const firebaseConfig = {
+                                apiKey: "AIzaSyAnBOXgNjVX12NLPQYOdgolEfYhQ4p71mA",
+                                authDomain: "scm-sambal-samuda.firebaseapp.com",
+                                projectId: "scm-sambal-samuda",
+                                storageBucket: "scm-sambal-samuda.firebasestorage.app",
+                                messagingSenderId: "594111914108",
+                                appId: "1:594111914108:web:5d788784d47d59580a69f9",
+                                measurementId: "G-J8W03WFL6Q"
+                            };
+
+                            this.useRootCollections = true;
+                            const app = fb.getApps().length ? fb.getApp() : fb.initializeApp(firebaseConfig);
+                            this.auth = fb.getAuth(app);
+                            this.db = fb.getFirestore(app);
+
+                            try {
+                                await fb.signInAnonymously(this.auth);
+                            } catch (authErr) {
+                                console.warn('Anonymous auth skipped or disabled:', authErr.code);
+                            }
+
+                            this.isCloudConnected = true;
+                            await this.ensureInitialCloudData();
+                            this.attachRealtimeListeners();
+                        } catch (err) {
+                            console.warn('Firebase fallback to local mode:', err);
+                            this.isCloudConnected = false;
+                            this.seedLocalFallbackData();
+                        }
+                    };
+
+                    if (window.firebaseModules) {
+                        await startFirebase();
+                    } else {
+                        window.addEventListener('firebase-loaded', startFirebase, { once: true });
+                        setTimeout(() => {
+                            if (!this.isCloudConnected && this.inventory.length === 0) {
+                                this.seedLocalFallbackData();
+                            }
+                        }, 2500);
+                    }
+                },
+
+                async reconnectFirebase() {
+                    this.notify('Mencoba menghubungkan kembali ke Firebase Cloud...');
+                    await this.initFirebaseAndData();
+                    if (this.isCloudConnected) {
+                        this.notify('Berhasil terhubung ke Firebase (scm-sambal-samuda)!');
+                    }
+                },
+
+                seedLocalFallbackData() {
+                    const saved = localStorage.getItem('scm_samuda_local_state');
+                    if (saved) {
+                        try {
+                            const parsed = JSON.parse(saved);
+                            if (parsed.inventory) this.inventory = parsed.inventory;
+                            if (parsed.outlets) this.outlets = parsed.outlets;
+                            if (parsed.categories) this.categories = parsed.categories;
+                            if (parsed.pos) this.pos = parsed.pos;
+                            if (parsed.deliveryNotes) this.deliveryNotes = parsed.deliveryNotes;
+                            if (parsed.stockCardLogs) this.stockCardLogs = parsed.stockCardLogs;
+                            if (parsed.ckProfile) {
+                                this.ckProfile = parsed.ckProfile;
+                                this.ckProfileForm = { ...parsed.ckProfile };
+                            }
+                            return;
+                        } catch (e) {}
+                    }
+                    if (this.inventory.length === 0) {
+                        this.inventory = [
+                            { id: 'INV-01', sku: 'SKU-1001', name: 'Sambal Bawang Samuda (Base)', category: 'Sambal Base Olahan', stock: 120, minStock: 30, unit: 'kg' },
+                            { id: 'INV-02', sku: 'SKU-1002', name: 'Sambal Terasi Nusantara', category: 'Sambal Base Olahan', stock: 95, minStock: 25, unit: 'kg' },
+                            { id: 'INV-03', sku: 'SKU-1003', name: 'Cabai Rawit Merah Segar', category: 'Bahan Baku Fresh', stock: 60, minStock: 20, unit: 'kg' },
+                            { id: 'INV-04', sku: 'SKU-1004', name: 'Ayam Ungkep Bumbu Kuning', category: 'Olahan Daging', stock: 150, minStock: 40, unit: 'pack' },
+                            { id: 'INV-05', sku: 'SKU-1005', name: 'Bebek Ungkep Rempah', category: 'Olahan Daging', stock: 80, minStock: 20, unit: 'pack' },
+                            { id: 'INV-06', sku: 'SKU-1006', name: 'Box Kemasan Takeaway Samuda', category: 'Packaging', stock: 500, minStock: 100, unit: 'pcs' }
+                        ];
+                    }
+                    this.saveLocalBackup();
+                },
+
+                saveLocalBackup() {
+                    try {
+                        localStorage.setItem('scm_samuda_local_state', JSON.stringify({
+                            inventory: this.inventory,
+                            outlets: this.outlets,
+                            categories: this.categories,
+                            pos: this.pos,
+                            deliveryNotes: this.deliveryNotes,
+                            stockCardLogs: this.stockCardLogs,
+                            ckProfile: this.ckProfile
+                        }));
+                    } catch (e) {}
+                },
+
+                handleFirestorePermissionError(err) {
+                    if (err && err.code === 'permission-denied') {
+                        if (this.isCloudConnected) {
+                            this.isCloudConnected = false;
+                            this.seedLocalFallbackData();
+                            this.notify('Akses Firestore ditolak (Rules). Beralih otomatis ke penyimpanan lokal perangkat.');
+                        }
+                    }
+                },
+
+                async ensureInitialCloudData() {
+                    const fb = window.firebaseModules;
+                    if (!this.db || !fb) return;
+
+                    try {
+                        const invSnap = await fb.getDocs(this.getColRef('inventory'));
+                        if (invSnap.empty) {
+                            const defaults = [
+                                { id: 'INV-01', sku: 'SKU-1001', name: 'Sambal Bawang Samuda (Base)', category: 'Sambal Base Olahan', stock: 120, minStock: 30, unit: 'kg' },
+                                { id: 'INV-02', sku: 'SKU-1002', name: 'Sambal Terasi Nusantara', category: 'Sambal Base Olahan', stock: 95, minStock: 25, unit: 'kg' },
+                                { id: 'INV-03', sku: 'SKU-1003', name: 'Cabai Rawit Merah Segar', category: 'Bahan Baku Fresh', stock: 60, minStock: 20, unit: 'kg' },
+                                { id: 'INV-04', sku: 'SKU-1004', name: 'Ayam Ungkep Bumbu Kuning', category: 'Olahan Daging', stock: 150, minStock: 40, unit: 'pack' },
+                                { id: 'INV-05', sku: 'SKU-1005', name: 'Bebek Ungkep Rempah', category: 'Olahan Daging', stock: 80, minStock: 20, unit: 'pack' },
+                                { id: 'INV-06', sku: 'SKU-1006', name: 'Box Kemasan Takeaway Samuda', category: 'Packaging', stock: 500, minStock: 100, unit: 'pcs' }
+                            ];
+                            for (const item of defaults) {
+                                await fb.setDoc(this.getDocRef('inventory', item.id), item);
+                            }
+                        }
+
+                        const outSnap = await fb.getDocs(this.getColRef('outlets'));
+                        if (outSnap.empty) {
+                            for (const out of this.outlets) {
+                                await fb.setDoc(this.getDocRef('outlets', out.id), out);
+                            }
+                        }
+
+                        const catSnap = await fb.getDocs(this.getColRef('categories'));
+                        if (catSnap.empty) {
+                            for (const cat of this.categories) {
+                                await fb.setDoc(this.getDocRef('categories', cat), { name: cat });
+                            }
+                        }
+                    } catch (e) {
+                        this.handleFirestorePermissionError(e);
+                    }
+                },
+
+                attachRealtimeListeners() {
+                    const fb = window.firebaseModules;
+                    if (!this.db || !fb) return;
+
+                    const onErr = (err) => this.handleFirestorePermissionError(err);
+
+                    fb.onSnapshot(this.getColRef('inventory'), (snap) => {
+                        const list = [];
+                        snap.forEach(d => list.push(d.data()));
+                        this.inventory = list.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+                        this.saveLocalBackup();
+                    }, onErr);
+
+                    fb.onSnapshot(this.getColRef('outlets'), (snap) => {
+                        if (!snap.empty) {
+                            const list = [];
+                            snap.forEach(d => list.push(d.data()));
+                            this.outlets = list.sort((a, b) => (a.id || '').localeCompare(b.id || ''));
+                            this.saveLocalBackup();
+                        }
+                    }, onErr);
+
+                    fb.onSnapshot(this.getColRef('categories'), (snap) => {
+                        if (!snap.empty) {
+                            const list = [];
+                            snap.forEach(d => list.push(d.data().name || d.id));
+                            this.categories = list;
+                            this.saveLocalBackup();
+                        }
+                    }, onErr);
+
+                    fb.onSnapshot(this.getColRef('pos'), (snap) => {
+                        const list = [];
+                        snap.forEach(d => list.push(d.data()));
+                        this.pos = list.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+                        this.saveLocalBackup();
+                    }, onErr);
+
+                    fb.onSnapshot(this.getColRef('deliveryNotes'), (snap) => {
+                        const list = [];
+                        snap.forEach(d => list.push(d.data()));
+                        this.deliveryNotes = list.sort((a, b) => new Date(b.dispatchTime || 0) - new Date(a.dispatchTime || 0));
+                        this.saveLocalBackup();
+                    }, onErr);
+
+                    fb.onSnapshot(this.getColRef('stockCardLogs'), (snap) => {
+                        const list = [];
+                        snap.forEach(d => list.push(d.data()));
+                        this.stockCardLogs = list.sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
+                        this.saveLocalBackup();
+                    }, onErr);
+
+                    fb.onSnapshot(this.getDocRef('settings', 'ckProfile'), (docSnap) => {
+                        if (docSnap.exists()) {
+                            this.ckProfile = docSnap.data();
+                            this.ckProfileForm = { ...this.ckProfile };
+                            this.saveLocalBackup();
+                        }
+                    }, onErr);
+                },
+
+                // Modal Visibility Flags
                 showCreatePOModal: false,
                 showProcessPOModal: false,
                 showReceiveModal: false,
+                showPODetailModal: false,
                 showRestockModal: false,
                 showAddItemModal: false,
                 showEditItemModal: false,
                 showCategoryModal: false,
                 showPrintSJModal: false,
+                showOutletModal: false,
+                showAdminEditPOModal: false,
+                showAdminEditSJModal: false,
 
+                // Resto PO Form State
                 newPO: {
-                    targetDate: '',
+                    targetDate: new Date(Date.now() + 86400000).toISOString().split('T')[0],
                     items: [{ itemId: '', qty: 1 }],
                     notes: ''
                 },
+                editingRestoPOId: null,
+
+                // Central Kitchen Process & Dispatch Forms
                 activePOForProcess: null,
                 processItems: [],
                 dispatchForm: {
                     courierType: 'Internal Driver (Samuda Fleet)',
-                    driverName: 'Pak Joko (Driver CK)',
-                    plateOrResi: 'B 9482 SKN',
-                    senderName: 'Budi (Staf CK)',
-                    receiverName: '(Belum Diterima Outlet)'
+                    driverName: '',
+                    plateOrResi: '',
+                    senderName: '',
+                    receiverName: ''
                 },
+
+                // Resto Goods Receipt Forms
                 activeSJForReceive: null,
                 receiveItemsForm: [],
-                receiveDiscrepancyNotes: '',
                 receiveReceiverName: '',
+                receiveDiscrepancyNotes: '',
 
+                // Inventory & Category Forms
                 restockForm: { itemId: '', qty: 0, refNo: '' },
-                newItemForm: { id: '', name: '', category: 'Sambal Base Olahan', stock: 50, minStock: 20, unit: 'kg' },
+                newItemForm: { id: '', name: '', category: '', stock: 0, minStock: 10, unit: 'kg' },
                 isEditingItem: false,
                 newCategoryName: '',
+
+                // Print Modal States
                 selectedSJForPrint: null,
+                isPrintingChecklist: false,
 
-                async initFirebaseAndData() {
-                    if (!window.firebaseModules) {
-                        await new Promise(resolve => {
-                            window.addEventListener('firebase-loaded', resolve, { once: true });
-                        });
-                    }
+                // Super Admin Forms
+                outletForm: { id: '', name: '', address: '', phone: '' },
+                isEditingOutlet: false,
+                adminEditingPO: null,
+                adminEditingSJ: null,
+                selectedPOForDetail: null,
+                toastMessage: '',
+                toastTimer: null,
+                isSavingReceipt: false,
+                isDispatchingPO: false,
 
-                    const fb = window.firebaseModules;
-                    
-                    // Konfigurasi Firebase Project: scm-sambal-samuda
-                    const firebaseConfig = {
-                        apiKey: "AIzaSyAnBOXgNjVX12NLPQYOdgolEfYhQ4p71mA",
-                        authDomain: "scm-sambal-samuda.firebaseapp.com",
-                        projectId: "scm-sambal-samuda",
-                        storageBucket: "scm-sambal-samuda.firebasestorage.app",
-                        messagingSenderId: "594111914108",
-                        appId: "1:594111914108:web:5d788784d47d59580a69f9",
-                        measurementId: "G-J8W03WFL6Q"
-                    };
-
-                    const app = fb.initializeApp(firebaseConfig);
-                    this.db = fb.getFirestore(app);
-                    this.auth = fb.getAuth(app);
-
-                    // Jalankan listener data real-time langsung agar sinkron di semua HP & Laptop
-                    this.initRealtimeListeners();
-
-                    // Autentikasi Anonim di background (jika diaktifkan di Firebase Console)
-                    fb.signInAnonymously(this.auth).catch(() => {
-                        console.log("Running with open Firestore rules");
-                    });
+                notify(msg) {
+                    this.toastMessage = msg;
+                    if (this.toastTimer) clearTimeout(this.toastTimer);
+                    this.toastTimer = setTimeout(() => {
+                        this.toastMessage = '';
+                    }, 4500);
                 },
 
-                initRealtimeListeners() {
-                    const fb = window.firebaseModules;
-                    
-                    // 1. Inventory Listener (Real-time di semua perangkat)
-                    const invCol = fb.collection(this.db, 'artifacts', this.appId, 'public', 'data', 'inventory');
-                    fb.onSnapshot(invCol, (snapshot) => {
-                        this.isCloudConnected = true;
-                        const items = [];
-                        snapshot.forEach(doc => items.push({ id: doc.id, ...doc.data() }));
-                        if (items.length > 0) {
-                            this.inventory = items;
-                        } else {
-                            this.seedInitialData();
-                        }
-                    }, (err) => { 
-                        console.error("Inv snapshot error:", err); 
-                        this.isCloudConnected = false;
-                    });
-
-                    // 2. POs Listener (Real-time di semua perangkat)
-                    const poCol = fb.collection(this.db, 'artifacts', this.appId, 'public', 'data', 'pos');
-                    fb.onSnapshot(poCol, (snapshot) => {
-                        const items = [];
-                        snapshot.forEach(doc => items.push({ id: doc.id, ...doc.data() }));
-                        this.pos = items.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-                    }, (err) => { console.error("PO snapshot error:", err); });
-
-                    // 3. Delivery Notes (Surat Jalan) Listener (Real-time di semua perangkat)
-                    const sjCol = fb.collection(this.db, 'artifacts', this.appId, 'public', 'data', 'deliveryNotes');
-                    fb.onSnapshot(sjCol, (snapshot) => {
-                        const items = [];
-                        snapshot.forEach(doc => items.push({ id: doc.id, ...doc.data() }));
-                        this.deliveryNotes = items.sort((a, b) => new Date(b.dispatchTime) - new Date(a.dispatchTime));
-                    }, (err) => { console.error("SJ snapshot error:", err); });
-
-                    // 4. Stock Card Logs Listener (Real-time di semua perangkat)
-                    const logCol = fb.collection(this.db, 'artifacts', this.appId, 'public', 'data', 'stockCardLogs');
-                    fb.onSnapshot(logCol, (snapshot) => {
-                        const items = [];
-                        snapshot.forEach(doc => items.push({ id: doc.id, ...doc.data() }));
-                        this.stockCardLogs = items.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-                    }, (err) => { console.error("Log snapshot error:", err); });
-
-                    // 5. Categories Listener (Real-time di semua perangkat)
-                    const catCol = fb.collection(this.db, 'artifacts', this.appId, 'public', 'data', 'categories');
-                    fb.onSnapshot(catCol, (snapshot) => {
-                        const items = [];
-                        snapshot.forEach(doc => items.push(doc.data().name));
-                        if (items.length > 0) this.categories = items;
-                    }, (err) => { console.error("Cat snapshot error:", err); });
-                },
-
-                async seedInitialData() {
-                    const fb = window.firebaseModules;
-                    const defaultInventory = [
-                        { id: 'INV-01', sku: 'RM-CB-01', name: 'Cabai Rawit Merah Giling', category: 'Bahan Baku Fresh', stock: 150, minStock: 50, unit: 'kg' },
-                        { id: 'INV-02', sku: 'RM-BW-02', name: 'Bawang Merah Kupas', category: 'Bahan Baku Fresh', stock: 80, minStock: 40, unit: 'kg' },
-                        { id: 'INV-03', sku: 'SB-BW-01', name: 'Sambal Bawang Base Pouch 1kg', category: 'Sambal Base Olahan', stock: 120, minStock: 40, unit: 'pouch' },
-                        { id: 'INV-04', sku: 'SB-HI-02', name: 'Sambal Hijau Base Pouch 1kg', category: 'Sambal Base Olahan', stock: 25, minStock: 30, unit: 'pouch' },
-                        { id: 'INV-05', sku: 'MP-AY-01', name: 'Ayam Ungkep Marinated (Pack 10 ekor)', category: 'Olahan Daging', stock: 65, minStock: 25, unit: 'pack' },
-                        { id: 'INV-06', sku: 'MP-BK-02', name: 'Bebek Ungkep Marinated (Pack 5 ekor)', category: 'Olahan Daging', stock: 18, minStock: 20, unit: 'pack' },
-                        { id: 'INV-07', sku: 'PK-BX-01', name: 'Kemasan Lunchbox Samuda', category: 'Packaging', stock: 1200, minStock: 300, unit: 'pcs' },
-                    ];
-
-                    for (const item of defaultInventory) {
-                        await fb.setDoc(fb.doc(this.db, 'artifacts', this.appId, 'public', 'data', 'inventory', item.id), item);
-                    }
-
-                    for (const cat of this.categories) {
-                        await fb.setDoc(fb.doc(this.db, 'artifacts', this.appId, 'public', 'data', 'categories', cat), { name: cat });
-                    }
-                },
-
+                // ================= COMPUTED GETTERS =================
                 get filteredRestoPOs() {
-                    return this.pos.filter(po => po.outletId === this.selectedOutletId);
+                    return (this.pos || []).filter(p => p.outletId === this.selectedOutletId);
                 },
                 get incomingShipmentsForResto() {
-                    return this.deliveryNotes.filter(sj => sj.outletId === this.selectedOutletId);
-                },
-                get pendingPOCount() {
-                    return this.pos.filter(p => p.status === 'PENDING').length;
+                    return (this.deliveryNotes || []).filter(sj => sj.outletId === this.selectedOutletId);
                 },
                 get pendingReceiptsCount() {
-                    return this.deliveryNotes.filter(s => s.outletId === this.selectedOutletId && s.status === 'IN_TRANSIT').length;
+                    return this.incomingShipmentsForResto.filter(sj => sj.status === 'IN_TRANSIT').length;
+                },
+                get pendingPOCount() {
+                    return (this.pos || []).filter(p => p.status === 'PENDING').length;
                 },
 
+                // ================= HELPER METHODS =================
                 getRoleName() {
-                    const roles = {
-                        resto: 'Admin Resto Outlet',
-                        ck: 'Manager Central Kitchen',
-                        audit: 'Audit & SCM Analyst'
+                    const map = {
+                        resto: 'Admin Resto (Outlet)',
+                        ck: 'Staff Gudang & Produksi Central Kitchen',
+                        audit: 'Tim Audit & Kontrol Stok',
+                        superadmin: 'Super Admin Master Control'
                     };
-                    return roles[this.currentRole] || '';
-                },
-                getOutletName(id) {
-                    const o = this.outlets.find(x => x.id === id);
-                    return o ? o.name : id;
+                    return map[this.currentRole] || 'Pengguna';
                 },
                 getSelectedOutletName() {
                     return this.getOutletName(this.selectedOutletId);
                 },
+                getOutletName(id) {
+                    const found = (this.outlets || []).find(o => o.id === id);
+                    return found ? found.name : (id || '-');
+                },
+                getOutletAddress(id) {
+                    const found = (this.outlets || []).find(o => o.id === id);
+                    return found ? (found.address || '-') : '-';
+                },
                 getItemName(id) {
-                    const item = this.inventory.find(i => i.id === id);
-                    return item ? item.name : id;
+                    const found = (this.inventory || []).find(i => i.id === id);
+                    return found ? found.name : (id || '-');
                 },
                 getItemUnit(id) {
-                    const item = this.inventory.find(i => i.id === id);
-                    return item ? item.unit : '';
+                    const found = (this.inventory || []).find(i => i.id === id);
+                    return found ? found.unit : 'unit';
                 },
                 getItemStock(id) {
-                    const item = this.inventory.find(i => i.id === id);
-                    return item ? item.stock : 0;
+                    const found = (this.inventory || []).find(i => i.id === id);
+                    return found ? Number(found.stock) : 0;
                 },
-                formatDate(dateStr) {
-                    if (!dateStr) return '-';
-                    const d = new Date(dateStr);
-                    return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+                formatDate(isoStr) {
+                    if (!isoStr) return '-';
+                    try {
+                        const d = new Date(isoStr);
+                        if (isNaN(d.getTime())) return isoStr;
+                        return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+                    } catch {
+                        return isoStr;
+                    }
                 },
-                formatDateTime(dateStr) {
-                    if (!dateStr) return '-';
-                    const d = new Date(dateStr);
-                    return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-                },
-
-                getStatusLabel(status) {
-                    const labels = {
-                        PENDING: 'Menunggu Verifikasi CK',
-                        SHIPPED: 'Dalam Pengiriman',
-                        COMPLETED: 'Diterima Outlet (Selesai)',
-                        CANCELLED: 'Dibatalkan'
-                    };
-                    return labels[status] || status;
+                formatDateTime(isoStr) {
+                    if (!isoStr) return '-';
+                    try {
+                        const d = new Date(isoStr);
+                        if (isNaN(d.getTime())) return isoStr;
+                        return d.toLocaleString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+                    } catch {
+                        return isoStr;
+                    }
                 },
                 getStatusBadgeClass(status) {
-                    const classes = {
-                        PENDING: 'bg-amber-100 text-amber-800 border border-amber-200',
-                        SHIPPED: 'bg-blue-100 text-blue-800 border border-blue-200',
-                        COMPLETED: 'bg-emerald-100 text-emerald-800 border border-emerald-200',
-                        CANCELLED: 'bg-slate-100 text-slate-600'
+                    const map = {
+                        PENDING: 'bg-amber-100 text-amber-800',
+                        SHIPPED: 'bg-blue-100 text-blue-800',
+                        COMPLETED: 'bg-emerald-100 text-emerald-800',
+                        CANCELLED: 'bg-rose-100 text-rose-800'
                     };
-                    return classes[status] || 'bg-slate-100 text-slate-700';
+                    return map[status] || 'bg-slate-100 text-slate-700';
                 },
-                getSJStatusLabel(status) {
-                    const labels = {
-                        IN_TRANSIT: 'Dalam Perjalanan',
-                        DELIVERED: 'Telah Diterima Resto',
-                        DISCREPANCY: 'Diterima Ada Selisih'
+                getStatusLabel(status) {
+                    const map = {
+                        PENDING: 'Menunggu Proses CK',
+                        SHIPPED: 'Dalam Pengiriman',
+                        COMPLETED: 'Diterima Outlet',
+                        CANCELLED: 'Dibatalkan'
                     };
-                    return labels[status] || status;
+                    return map[status] || status;
                 },
                 getSJStatusBadgeClass(status) {
-                    const classes = {
+                    const map = {
                         IN_TRANSIT: 'bg-blue-100 text-blue-800',
                         DELIVERED: 'bg-emerald-100 text-emerald-800',
                         DISCREPANCY: 'bg-amber-100 text-amber-800'
                     };
-                    return classes[status] || 'bg-slate-100';
+                    return map[status] || 'bg-slate-100 text-slate-700';
+                },
+                getSJStatusLabel(status) {
+                    const map = {
+                        IN_TRANSIT: 'Dalam Perjalanan',
+                        DELIVERED: 'Diterima Lengkap',
+                        DISCREPANCY: 'Diterima (Ada Selisih)'
+                    };
+                    return map[status] || status;
                 },
 
+                // ================= RESTO PO METHODS =================
                 openCreatePOModal() {
+                    this.editingRestoPOId = null;
                     const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
                     this.newPO = {
                         targetDate: tomorrow,
-                        items: [{ itemId: '', qty: 1 }],
+                        items: [{ itemId: this.inventory[0]?.id || '', qty: 1 }],
                         notes: ''
                     };
                     this.showCreatePOModal = true;
                 },
+                openEditRestoPOModal(po) {
+                    this.editingRestoPOId = po.id;
+                    this.newPO = {
+                        targetDate: po.targetDate,
+                        items: JSON.parse(JSON.stringify(po.items || [])),
+                        notes: po.notes || ''
+                    };
+                    this.showCreatePOModal = true;
+                },
                 addItemToPOForm() {
-                    this.newPO.items.push({ itemId: '', qty: 1 });
+                    this.newPO.items.push({ itemId: this.inventory[0]?.id || '', qty: 1 });
                 },
                 removeItemFromPOForm(index) {
-                    this.newPO.items.splice(index, 1);
+                    if (this.newPO.items.length > 1) {
+                        this.newPO.items.splice(index, 1);
+                    } else {
+                        this.notify('Minimal harus ada 1 item pesanan dalam PO!');
+                    }
                 },
                 async submitNewPO() {
-                    const validItems = this.newPO.items.filter(i => i.itemId && i.qty > 0);
+                    if (!this.newPO.targetDate) {
+                        this.notify('Pilih Target Tanggal Kirim terlebih dahulu!');
+                        return;
+                    }
+                    const validItems = (this.newPO.items || []).filter(i => i.itemId && Number(i.qty) > 0).map(i => ({
+                        itemId: i.itemId,
+                        qty: Number(i.qty)
+                    }));
                     if (validItems.length === 0) {
-                        alert('Silakan pilih minimal 1 item bahan baku dengan jumlah valid!');
+                        this.notify('Pilih minimal 1 bahan baku dengan jumlah lebih dari 0!');
                         return;
                     }
 
-                    const poId = 'PO-' + new Date().getFullYear() + String(new Date().getMonth() + 1).padStart(2, '0') + '-' + String(Math.floor(100 + Math.random() * 900));
-                    const newPOObj = {
-                        id: poId,
-                        outletId: this.selectedOutletId,
-                        createdAt: new Date().toISOString(),
-                        targetDate: this.newPO.targetDate,
-                        status: 'PENDING',
-                        sjId: null,
-                        items: validItems,
-                        notes: this.newPO.notes
-                    };
-
                     const fb = window.firebaseModules;
-                    await fb.setDoc(fb.doc(this.db, 'artifacts', this.appId, 'public', 'data', 'pos', poId), newPOObj);
+                    if (this.editingRestoPOId) {
+                        const idx = this.pos.findIndex(p => p.id === this.editingRestoPOId);
+                        if (idx !== -1) {
+                            this.pos[idx].targetDate = this.newPO.targetDate;
+                            this.pos[idx].items = validItems;
+                            this.pos[idx].notes = this.newPO.notes || '';
+                        }
+                        this.saveLocalBackup();
+                        if (this.isCloudConnected && this.db) {
+                            await fb.updateDoc(this.getDocRef('pos', this.editingRestoPOId), {
+                                targetDate: this.newPO.targetDate,
+                                items: validItems,
+                                notes: this.newPO.notes || ''
+                            }).catch(e => this.handleFirestorePermissionError(e));
+                        }
+                        this.notify('Perubahan PO ' + this.editingRestoPOId + ' berhasil disimpan!');
+                    } else {
+                        const poId = 'PO-' + new Date().getFullYear() + String(new Date().getMonth() + 1).padStart(2, '0') + '-' + String(Math.floor(100 + Math.random() * 900));
+                        const poObj = {
+                            id: poId,
+                            outletId: this.selectedOutletId,
+                            createdAt: new Date().toISOString(),
+                            targetDate: this.newPO.targetDate,
+                            status: 'PENDING',
+                            items: validItems,
+                            notes: this.newPO.notes || '',
+                            sjId: ''
+                        };
+                        this.pos.unshift(poObj);
+                        this.saveLocalBackup();
+                        if (this.isCloudConnected && this.db) {
+                            await fb.setDoc(this.getDocRef('pos', poId), poObj).catch(e => this.handleFirestorePermissionError(e));
+                        }
+                        this.notify('Purchase Order ' + poId + ' berhasil dikirim ke Central Kitchen!');
+                    }
                     this.showCreatePOModal = false;
-                    alert('Purchase Order ' + poId + ' berhasil dikirimkan dan otomatis muncul di perangkat Central Kitchen!');
+                },
+                openReceiveModalByPO(po) {
+                    let sj = null;
+                    if (po.sjId) {
+                        sj = this.deliveryNotes.find(s => s.id === po.sjId);
+                    }
+                    if (!sj) {
+                        sj = this.deliveryNotes.find(s => s.poId === po.id);
+                    }
+                    if (sj) {
+                        this.openReceiveModal(sj);
+                    } else {
+                        this.notify('Data Surat Jalan untuk PO ini belum ditemukan.');
+                    }
                 },
 
+                // ================= CENTRAL KITCHEN METHODS =================
                 openProcessPOModal(po) {
-                    this.activePOForProcess = po;
-                    this.processItems = po.items.map(i => ({
-                        itemId: i.itemId,
-                        qtyRequested: i.qty,
-                        qtyShipped: i.qty
+                    this.activePOForProcess = JSON.parse(JSON.stringify(po));
+                    this.processItems = (po.items || []).map(it => ({
+                        itemId: it.itemId,
+                        qtyRequested: Number(it.qty) || 0,
+                        qtyShipped: Math.min(Number(it.qty) || 0, this.getItemStock(it.itemId))
                     }));
                     this.dispatchForm = {
                         courierType: 'Internal Driver (Samuda Fleet)',
-                        driverName: 'Pak Joko (Driver CK)',
-                        plateOrResi: 'B ' + Math.floor(1000 + Math.random() * 9000) + ' SKN',
-                        senderName: 'Budi (Staf CK)',
-                        receiverName: '(Belum Diterima Outlet)'
+                        driverName: '',
+                        plateOrResi: '',
+                        senderName: '',
+                        receiverName: ''
                     };
                     this.showProcessPOModal = true;
                 },
                 printChecklistForm() {
-                    const mockSJ = {
+                    if (!this.activePOForProcess) return;
+                    this.isPrintingChecklist = true;
+                    this.selectedSJForPrint = {
                         id: 'CHECKLIST-' + this.activePOForProcess.id,
                         poId: this.activePOForProcess.id,
                         outletId: this.activePOForProcess.outletId,
-                        courierType: this.dispatchForm.courierType || 'Belum Ditentukan',
-                        driverName: this.dispatchForm.driverName || 'Belum Ditentukan',
-                        plateOrResi: this.dispatchForm.plateOrResi || '-',
-                        senderName: this.dispatchForm.senderName || 'Staf CK',
-                        receiverName: this.dispatchForm.receiverName || 'Manager Outlet',
+                        courierType: this.dispatchForm.courierType || 'Internal Driver (Samuda Fleet)',
+                        driverName: this.dispatchForm.driverName || '....................',
+                        plateOrResi: this.dispatchForm.plateOrResi || '....................',
+                        senderName: this.dispatchForm.senderName || 'Staf Gudang CK',
+                        receiverName: 'Manager Outlet',
                         dispatchTime: new Date().toISOString(),
-                        status: 'CHECKLIST GUDANG',
                         items: this.processItems.map(i => ({
                             itemId: i.itemId,
-                            qtyShipped: i.qtyShipped,
-                            qtyReceived: undefined
-                        })),
-                        discrepancyNotes: 'Lembar Cek Fisik Gudang / Pick List'
+                            qtyShipped: i.qtyShipped
+                        }))
                     };
-                    this.selectedSJForPrint = mockSJ;
-                    this.showProcessPOModal = false;
                     this.showPrintSJModal = true;
                 },
+                closePrintModal() {
+                    this.showPrintSJModal = false;
+                    this.isPrintingChecklist = false;
+                },
                 async confirmProcessPOAndDispatch() {
-                    if (!this.dispatchForm.driverName || !this.dispatchForm.plateOrResi) {
-                        alert('Mohon lengkapi Nama Kurir dan Plat Kendaraan/Resi!');
+                    if (!this.activePOForProcess || this.isDispatchingPO) return;
+
+                    if (!this.dispatchForm.driverName || !this.dispatchForm.driverName.trim() || !this.dispatchForm.plateOrResi || !this.dispatchForm.plateOrResi.trim()) {
+                        this.notify('Mohon lengkapi Nama Driver/Kurir dan Plat Kendaraan/Resi!');
                         return;
                     }
 
-                    const invalidStockItem = this.processItems.find(i => i.qtyShipped > this.getItemStock(i.itemId));
+                    const normalizedItems = (this.processItems || []).map(i => ({
+                        itemId: i.itemId,
+                        qtyRequested: Number(i.qtyRequested) || 0,
+                        qtyShipped: Math.max(0, Number(i.qtyShipped) || 0)
+                    }));
+
+                    const invalidStockItem = normalizedItems.find(i => i.qtyShipped > Number(this.getItemStock(i.itemId)));
                     if (invalidStockItem) {
-                        alert('Jumlah kirim untuk "' + this.getItemName(invalidStockItem.itemId) + '" melebihi stok ketersediaan Central Kitchen (' + this.getItemStock(invalidStockItem.itemId) + ')!');
+                        this.notify('Jumlah kirim untuk "' + this.getItemName(invalidStockItem.itemId) + '" melebihi stok ready CK (' + this.getItemStock(invalidStockItem.itemId) + ')!');
                         return;
                     }
 
-                    const validItemsToShip = this.processItems.filter(i => i.itemId && i.qtyShipped > 0);
+                    const validItemsToShip = normalizedItems.filter(i => i.itemId && i.qtyShipped > 0);
                     if (validItemsToShip.length === 0) {
-                        alert('Minimal harus ada 1 item yang dikirim dengan jumlah > 0!');
+                        this.notify('Minimal harus ada 1 item yang dikirim dengan jumlah lebih dari 0!');
                         return;
                     }
 
-                    const sjId = 'SJ-' + new Date().getFullYear() + String(new Date().getMonth() + 1).padStart(2, '0') + '-' + String(Math.floor(100 + Math.random() * 900));
-                    const fb = window.firebaseModules;
+                    this.isDispatchingPO = true;
+                    try {
+                        const sjId = 'SJ-' + new Date().getFullYear() + String(new Date().getMonth() + 1).padStart(2, '0') + '-' + String(Math.floor(100 + Math.random() * 900));
+                        const fb = window.firebaseModules;
+                        const poId = this.activePOForProcess.id;
+                        const outletId = this.activePOForProcess.outletId;
 
-                    for (const pItem of validItemsToShip) {
-                        const invItem = this.inventory.find(i => i.id === pItem.itemId);
-                        if (invItem) {
-                            const newStock = invItem.stock - pItem.qtyShipped;
-                            await fb.updateDoc(fb.doc(this.db, 'artifacts', this.appId, 'public', 'data', 'inventory', invItem.id), { stock: newStock });
-                            
-                            const logId = 'LOG-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
-                            await fb.setDoc(fb.doc(this.db, 'artifacts', this.appId, 'public', 'data', 'stockCardLogs', logId), {
-                                id: logId,
-                                timestamp: new Date().toISOString(),
-                                itemId: invItem.id,
-                                itemName: invItem.name,
-                                type: 'OUT_PO_SHIPMENT',
-                                qty: -pItem.qtyShipped,
-                                balanceAfter: newStock,
-                                unit: invItem.unit,
-                                refNo: sjId + ' (' + this.getOutletName(this.activePOForProcess.outletId) + ')'
-                            });
+                        for (const pItem of validItemsToShip) {
+                            const invItem = this.inventory.find(i => i.id === pItem.itemId);
+                            if (invItem) {
+                                const currentStock = Number(invItem.stock) || 0;
+                                const newStock = Math.max(0, currentStock - pItem.qtyShipped);
+                                invItem.stock = newStock;
+
+                                const logId = 'LOG-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+                                const logEntry = {
+                                    id: logId,
+                                    timestamp: new Date().toISOString(),
+                                    itemId: invItem.id,
+                                    itemName: invItem.name,
+                                    type: 'OUT_PO_SHIPMENT',
+                                    qty: -pItem.qtyShipped,
+                                    balanceAfter: newStock,
+                                    unit: invItem.unit,
+                                    refNo: sjId + ' (' + this.getOutletName(outletId) + ')'
+                                };
+                                this.stockCardLogs.unshift(logEntry);
+
+                                if (this.isCloudConnected && this.db) {
+                                    await fb.setDoc(this.getDocRef('inventory', invItem.id), {
+                                        stock: newStock
+                                    }, { merge: true });
+                                    await fb.setDoc(this.getDocRef('stockCardLogs', logId), logEntry);
+                                }
+                            }
                         }
+
+                        const newSJ = {
+                            id: sjId,
+                            poId: poId,
+                            outletId: outletId,
+                            courierType: this.dispatchForm.courierType || 'Internal Driver (Samuda Fleet)',
+                            driverName: this.dispatchForm.driverName.trim(),
+                            plateOrResi: this.dispatchForm.plateOrResi.trim(),
+                            senderName: (this.dispatchForm.senderName && this.dispatchForm.senderName.trim()) ? this.dispatchForm.senderName.trim() : 'Staf CK',
+                            receiverName: 'Manager Outlet',
+                            dispatchTime: new Date().toISOString(),
+                            status: 'IN_TRANSIT',
+                            items: validItemsToShip.map(i => ({
+                                itemId: i.itemId,
+                                qtyShipped: i.qtyShipped,
+                                qtyReceived: null
+                            })),
+                            discrepancyNotes: ''
+                        };
+
+                        this.deliveryNotes.unshift(newSJ);
+                        const poIdx = this.pos.findIndex(p => p.id === poId);
+                        if (poIdx !== -1) {
+                            this.pos[poIdx].status = 'SHIPPED';
+                            this.pos[poIdx].sjId = sjId;
+                        }
+                        this.saveLocalBackup();
+
+                        if (this.isCloudConnected && this.db) {
+                            await fb.setDoc(this.getDocRef('deliveryNotes', sjId), newSJ);
+                            await fb.setDoc(this.getDocRef('pos', poId), {
+                                status: 'SHIPPED',
+                                sjId: sjId
+                            }, { merge: true });
+                        }
+
+                        this.showProcessPOModal = false;
+                        this.activePOForProcess = null;
+                        this.notify('Surat Jalan ' + sjId + ' diterbitkan & stok Central Kitchen berhasil dipotong!');
+                    } catch (err) {
+                        console.error('Error dispatching PO:', err);
+                        this.handleFirestorePermissionError(err);
+                    } finally {
+                        this.isDispatchingPO = false;
                     }
-
-                    const newSJ = {
-                        id: sjId,
-                        poId: this.activePOForProcess.id,
-                        outletId: this.activePOForProcess.outletId,
-                        courierType: this.dispatchForm.courierType,
-                        driverName: this.dispatchForm.driverName,
-                        plateOrResi: this.dispatchForm.plateOrResi,
-                        senderName: this.dispatchForm.senderName || 'Staf CK',
-                        receiverName: this.dispatchForm.receiverName || 'Manager Outlet',
-                        dispatchTime: new Date().toISOString(),
-                        status: 'IN_TRANSIT',
-                        items: validItemsToShip.map(i => ({
-                            itemId: i.itemId,
-                            qtyShipped: i.qtyShipped,
-                            qtyReceived: undefined
-                        })),
-                        discrepancyNotes: ''
-                    };
-
-                    await fb.updateDoc(fb.doc(this.db, 'artifacts', this.appId, 'public', 'data', 'pos', this.activePOForProcess.id), {
-                        status: 'SHIPPED',
-                        sjId: sjId
-                    });
-
-                    await fb.setDoc(fb.doc(this.db, 'artifacts', this.appId, 'public', 'data', 'deliveryNotes', sjId), newSJ);
-
-                    this.showProcessPOModal = false;
-                    alert('Surat Jalan ' + sjId + ' diterbitkan! Stok Central Kitchen telah terpotong di seluruh perangkat.');
                 },
 
                 openReceiveModal(sj) {
-                    this.activeSJForReceive = sj;
-                    this.receiveReceiverName = sj.receiverName && sj.receiverName !== '(Belum Diterima Outlet)' ? sj.receiverName : '';
-                    this.receiveItemsForm = sj.items.map(item => ({
+                    if (!sj) return;
+                    this.activeSJForReceive = JSON.parse(JSON.stringify(sj));
+                    this.receiveReceiverName = (sj.receiverName && sj.receiverName !== '(Belum Diterima Outlet)' && sj.receiverName !== 'Manager Outlet') ? sj.receiverName : '';
+                    const sourceItems = Array.isArray(sj.items) ? sj.items : [];
+                    this.receiveItemsForm = sourceItems.map(item => ({
                         itemId: item.itemId,
-                        qtyShipped: item.qtyShipped,
-                        qtyReceived: item.qtyShipped
+                        qtyShipped: Number(item.qtyShipped) || 0,
+                        qtyReceived: Number(item.qtyShipped) || 0
                     }));
                     this.receiveDiscrepancyNotes = sj.discrepancyNotes || '';
                     this.showReceiveModal = true;
                 },
                 async confirmGoodsReceipt() {
                     const sj = this.activeSJForReceive;
-                    if (!sj) return;
+                    if (!sj || this.isSavingReceipt) return;
 
-                    if (!this.receiveReceiverName.trim()) {
-                        alert('Silakan isi Nama Staff / Manager Outlet yang menerima barang terlebih dahulu!');
+                    if (!this.receiveReceiverName || !this.receiveReceiverName.trim()) {
+                        this.notify('Wajib isi Nama Staff / Manager Outlet yang menerima barang!');
                         return;
                     }
 
-                    let hasDiscrepancy = false;
-                    const updatedItems = sj.items.map(targetItem => {
-                        const formItem = this.receiveItemsForm.find(i => i.itemId === targetItem.itemId);
-                        const recQty = formItem ? formItem.qtyReceived : targetItem.qtyShipped;
-                        if (recQty !== targetItem.qtyShipped) hasDiscrepancy = true;
-                        return {
-                            itemId: targetItem.itemId,
-                            qtyShipped: targetItem.qtyShipped,
-                            qtyReceived: recQty
-                        };
-                    });
+                    this.isSavingReceipt = true;
+                    try {
+                        let hasDiscrepancy = false;
+                        const updatedItems = (sj.items || []).map(targetItem => {
+                            const formItem = this.receiveItemsForm.find(i => i.itemId === targetItem.itemId);
+                            const shippedQty = Number(targetItem.qtyShipped) || 0;
+                            const recQty = (formItem && formItem.qtyReceived !== '' && formItem.qtyReceived !== null && !isNaN(Number(formItem.qtyReceived)))
+                                ? Number(formItem.qtyReceived)
+                                : shippedQty;
+                            if (recQty !== shippedQty) hasDiscrepancy = true;
+                            return {
+                                itemId: targetItem.itemId,
+                                qtyShipped: shippedQty,
+                                qtyReceived: recQty
+                            };
+                        });
 
-                    const newStatus = hasDiscrepancy ? 'DISCREPANCY' : 'DELIVERED';
-                    const fb = window.firebaseModules;
+                        const newStatus = hasDiscrepancy ? 'DISCREPANCY' : 'DELIVERED';
+                        const fb = window.firebaseModules;
 
-                    await fb.updateDoc(fb.doc(this.db, 'artifacts', this.appId, 'public', 'data', 'deliveryNotes', sj.id), {
-                        receiverName: this.receiveReceiverName,
-                        status: newStatus,
-                        items: updatedItems,
-                        discrepancyNotes: this.receiveDiscrepancyNotes
-                    });
+                        const sjIdx = this.deliveryNotes.findIndex(s => s.id === sj.id);
+                        if (sjIdx !== -1) {
+                            this.deliveryNotes[sjIdx].receiverName = this.receiveReceiverName.trim();
+                            this.deliveryNotes[sjIdx].status = newStatus;
+                            this.deliveryNotes[sjIdx].items = updatedItems;
+                            this.deliveryNotes[sjIdx].discrepancyNotes = this.receiveDiscrepancyNotes || '';
+                        }
+                        if (sj.poId) {
+                            const poIdx = this.pos.findIndex(p => p.id === sj.poId);
+                            if (poIdx !== -1) {
+                                this.pos[poIdx].status = 'COMPLETED';
+                                this.pos[poIdx].sjId = sj.id;
+                            }
+                        }
+                        this.saveLocalBackup();
 
-                    await fb.updateDoc(fb.doc(this.db, 'artifacts', this.appId, 'public', 'data', 'pos', sj.poId), {
-                        status: 'COMPLETED'
-                    });
+                        if (this.isCloudConnected && this.db) {
+                            if (sj._isSynthetic) {
+                                await fb.setDoc(this.getDocRef('deliveryNotes', sj.id), {
+                                    id: sj.id,
+                                    poId: sj.poId,
+                                    outletId: sj.outletId,
+                                    courierType: sj.courierType,
+                                    driverName: sj.driverName,
+                                    plateOrResi: sj.plateOrResi,
+                                    senderName: sj.senderName,
+                                    receiverName: this.receiveReceiverName.trim(),
+                                    dispatchTime: sj.dispatchTime,
+                                    status: newStatus,
+                                    items: updatedItems,
+                                    discrepancyNotes: this.receiveDiscrepancyNotes || ''
+                                });
+                            } else {
+                                await fb.updateDoc(this.getDocRef('deliveryNotes', sj.id), {
+                                    receiverName: this.receiveReceiverName.trim(),
+                                    status: newStatus,
+                                    items: updatedItems,
+                                    discrepancyNotes: this.receiveDiscrepancyNotes || ''
+                                });
+                            }
 
-                    this.showReceiveModal = false;
-                    alert('Penerimaan barang dikonfirmasi! Status di Central Kitchen juga otomatis terupdate.');
+                            if (sj.poId) {
+                                await fb.setDoc(this.getDocRef('pos', sj.poId), {
+                                    status: 'COMPLETED',
+                                    sjId: sj.id
+                                }, { merge: true });
+                            }
+                        }
+
+                        this.showReceiveModal = false;
+                        this.activeSJForReceive = null;
+                        this.notify('Penerimaan barang berhasil disimpan! Status PO & Surat Jalan telah diperbarui.');
+                    } catch (err) {
+                        console.error('Error confirming goods receipt:', err);
+                        this.handleFirestorePermissionError(err);
+                    } finally {
+                        this.isSavingReceipt = false;
+                    }
                 },
 
                 openRestockModal() {
-                    this.restockForm = { itemId: '', qty: 0, refNo: '' };
+                    this.restockForm = {
+                        itemId: this.inventory[0]?.id || '',
+                        qty: 1,
+                        refNo: 'SUP-' + new Date().getFullYear() + '-' + Math.floor(100 + Math.random() * 900)
+                    };
                     this.showRestockModal = true;
                 },
                 async submitRestock() {
-                    if (!this.restockForm.itemId || this.restockForm.qty <= 0) {
-                        alert('Pilih item dan masukkan kuantitas restock yang valid!');
+                    const qty = Number(this.restockForm.qty);
+                    if (!this.restockForm.itemId || isNaN(qty) || qty <= 0) {
+                        this.notify('Pilih bahan baku dan masukkan jumlah masuk yang valid!');
                         return;
                     }
-
                     const item = this.inventory.find(i => i.id === this.restockForm.itemId);
-                    if (item) {
-                        const newStock = item.stock + this.restockForm.qty;
-                        const fb = window.firebaseModules;
-                        
-                        await fb.updateDoc(fb.doc(this.db, 'artifacts', this.appId, 'public', 'data', 'inventory', item.id), { stock: newStock });
+                    if (!item) return;
 
-                        const logId = 'LOG-' + Date.now();
-                        await fb.setDoc(fb.doc(this.db, 'artifacts', this.appId, 'public', 'data', 'stockCardLogs', logId), {
-                            id: logId,
-                            timestamp: new Date().toISOString(),
-                            itemId: item.id,
-                            itemName: item.name,
-                            type: 'IN_RESTOCK',
-                            qty: this.restockForm.qty,
-                            balanceAfter: newStock,
-                            unit: item.unit,
-                            refNo: this.restockForm.refNo || 'INBOUND-RESTOCK'
-                        });
+                    const newStock = (Number(item.stock) || 0) + qty;
+                    item.stock = newStock;
+                    const fb = window.firebaseModules;
 
-                        this.showRestockModal = false;
-                        alert('Restock berhasil! Stok di semua perangkat otomatis terupdate.');
+                    const logId = 'LOG-' + Date.now();
+                    const logEntry = {
+                        id: logId,
+                        timestamp: new Date().toISOString(),
+                        itemId: item.id,
+                        itemName: item.name,
+                        type: 'IN_RESTOCK',
+                        qty: qty,
+                        balanceAfter: newStock,
+                        unit: item.unit,
+                        refNo: (this.restockForm.refNo && this.restockForm.refNo.trim()) ? this.restockForm.refNo.trim() : 'Restock Gudang CK'
+                    };
+                    this.stockCardLogs.unshift(logEntry);
+                    this.saveLocalBackup();
+
+                    if (this.isCloudConnected && this.db) {
+                        await fb.updateDoc(this.getDocRef('inventory', item.id), {
+                            stock: newStock
+                        }).catch(e => this.handleFirestorePermissionError(e));
+
+                        await fb.setDoc(this.getDocRef('stockCardLogs', logId), logEntry).catch(e => this.handleFirestorePermissionError(e));
                     }
+
+                    this.showRestockModal = false;
+                    this.notify('Restock ' + item.name + ' (+' + qty + ' ' + item.unit + ') berhasil disimpan!');
                 },
 
                 async quickAdjustStock(item, delta) {
                     if (item.stock + delta < 0) {
-                        alert('Stok tidak boleh minus!');
+                        this.notify('Stok tidak boleh minus!');
                         return;
                     }
                     const newStock = item.stock + delta;
+                    item.stock = newStock;
                     const fb = window.firebaseModules;
-                    
-                    await fb.updateDoc(fb.doc(this.db, 'artifacts', this.appId, 'public', 'data', 'inventory', item.id), { stock: newStock });
 
                     const logId = 'LOG-' + Date.now();
-                    await fb.setDoc(fb.doc(this.db, 'artifacts', this.appId, 'public', 'data', 'stockCardLogs', logId), {
+                    const logEntry = {
                         id: logId,
                         timestamp: new Date().toISOString(),
                         itemId: item.id,
@@ -1260,39 +2229,67 @@
                         balanceAfter: newStock,
                         unit: item.unit,
                         refNo: 'Penyesuaian Manual'
-                    });
-                },
+                    };
+                    this.stockCardLogs.unshift(logEntry);
+                    this.saveLocalBackup();
 
+                    if (this.isCloudConnected && this.db) {
+                        await fb.updateDoc(this.getDocRef('inventory', item.id), { stock: newStock }).catch(e => this.handleFirestorePermissionError(e));
+                        await fb.setDoc(this.getDocRef('stockCardLogs', logId), logEntry).catch(e => this.handleFirestorePermissionError(e));
+                    }
+                },
                 openAddItemModal() {
                     this.isEditingItem = false;
-                    this.newItemForm = { id: '', name: '', category: this.categories[0] || 'Umum', stock: 50, minStock: 20, unit: 'kg' };
+                    this.newItemForm = {
+                        id: '',
+                        name: '',
+                        category: this.categories[0] || '',
+                        stock: 0,
+                        minStock: 10,
+                        unit: 'kg'
+                    };
                     this.showAddItemModal = true;
                 },
                 openEditItemModal(item) {
                     this.isEditingItem = true;
-                    this.newItemForm = { ...item };
+                    this.newItemForm = {
+                        id: item.id,
+                        name: item.name,
+                        category: item.category,
+                        stock: Number(item.stock) || 0,
+                        minStock: Number(item.minStock) || 10,
+                        unit: item.unit || 'kg'
+                    };
                     this.showEditItemModal = true;
                 },
                 closeItemModal() {
                     this.showAddItemModal = false;
                     this.showEditItemModal = false;
+                    this.isEditingItem = false;
                 },
                 async saveItemForm() {
                     if (!this.newItemForm.name || !this.newItemForm.unit || !this.newItemForm.category) {
-                        alert('Lengkapi nama, kategori, dan satuan item!');
+                        this.notify('Lengkapi nama, kategori, dan satuan item!');
                         return;
                     }
 
                     const fb = window.firebaseModules;
                     if (this.isEditingItem) {
-                        await fb.updateDoc(fb.doc(this.db, 'artifacts', this.appId, 'public', 'data', 'inventory', this.newItemForm.id), {
-                            name: this.newItemForm.name,
-                            category: this.newItemForm.category,
-                            stock: this.newItemForm.stock,
-                            minStock: this.newItemForm.minStock,
-                            unit: this.newItemForm.unit
-                        });
-                        alert('Produk SKU berhasil diperbarui di semua perangkat!');
+                        const idx = this.inventory.findIndex(i => i.id === this.newItemForm.id);
+                        if (idx !== -1) {
+                            this.inventory[idx] = { ...this.inventory[idx], ...this.newItemForm };
+                        }
+                        this.saveLocalBackup();
+                        if (this.isCloudConnected && this.db) {
+                            await fb.updateDoc(this.getDocRef('inventory', this.newItemForm.id), {
+                                name: this.newItemForm.name,
+                                category: this.newItemForm.category,
+                                stock: this.newItemForm.stock,
+                                minStock: this.newItemForm.minStock,
+                                unit: this.newItemForm.unit
+                            }).catch(e => this.handleFirestorePermissionError(e));
+                        }
+                        this.notify('Produk SKU berhasil diperbarui!');
                     } else {
                         const newId = 'INV-' + Date.now();
                         const sku = 'SKU-' + Math.floor(1000 + Math.random() * 9000);
@@ -1305,16 +2302,23 @@
                             minStock: this.newItemForm.minStock || 10,
                             unit: this.newItemForm.unit
                         };
-                        await fb.setDoc(fb.doc(this.db, 'artifacts', this.appId, 'public', 'data', 'inventory', newId), newItem);
-                        alert('Produk SKU baru ditambahkan dan langsung muncul di perangkat outlet!');
+                        this.inventory.push(newItem);
+                        this.saveLocalBackup();
+                        if (this.isCloudConnected && this.db) {
+                            await fb.setDoc(this.getDocRef('inventory', newId), newItem).catch(e => this.handleFirestorePermissionError(e));
+                        }
+                        this.notify('Produk SKU baru berhasil ditambahkan!');
                     }
                     this.closeItemModal();
                 },
                 async deleteInventoryItem(id) {
-                    if (confirm('Apakah Anda yakin ingin menghapus produk ini?')) {
+                    this.inventory = this.inventory.filter(i => i.id !== id);
+                    this.saveLocalBackup();
+                    if (this.isCloudConnected && this.db) {
                         const fb = window.firebaseModules;
-                        await fb.deleteDoc(fb.doc(this.db, 'artifacts', this.appId, 'public', 'data', 'inventory', id));
+                        await fb.deleteDoc(this.getDocRef('inventory', id)).catch(e => this.handleFirestorePermissionError(e));
                     }
+                    this.notify('Produk SKU berhasil dihapus!');
                 },
 
                 openCategoryModal() {
@@ -1325,30 +2329,181 @@
                     const cat = this.newCategoryName.trim();
                     if (!cat) return;
                     if (this.categories.includes(cat)) {
-                        alert('Kategori tersebut sudah ada!');
+                        this.notify('Kategori tersebut sudah ada!');
                         return;
                     }
-                    const fb = window.firebaseModules;
-                    await fb.setDoc(fb.doc(this.db, 'artifacts', this.appId, 'public', 'data', 'categories', cat), { name: cat });
+                    this.categories.push(cat);
+                    this.saveLocalBackup();
+                    if (this.isCloudConnected && this.db) {
+                        const fb = window.firebaseModules;
+                        await fb.setDoc(this.getDocRef('categories', cat), { name: cat }).catch(e => this.handleFirestorePermissionError(e));
+                    }
                     this.newCategoryName = '';
+                    this.notify('Kategori "' + cat + '" berhasil ditambahkan!');
                 },
                 async deleteCategory(cat) {
                     if (this.categories.length <= 1) {
-                        alert('Minimal harus ada 1 kategori!');
+                        this.notify('Minimal harus ada 1 kategori!');
                         return;
                     }
-                    if (confirm('Hapus kategori "' + cat + '"?')) {
+                    this.categories = this.categories.filter(c => c !== cat);
+                    this.saveLocalBackup();
+                    if (this.isCloudConnected && this.db) {
                         const fb = window.firebaseModules;
-                        await fb.deleteDoc(fb.doc(this.db, 'artifacts', this.appId, 'public', 'data', 'categories', cat));
+                        await fb.deleteDoc(this.getDocRef('categories', cat)).catch(e => this.handleFirestorePermissionError(e));
                     }
+                    this.notify('Kategori "' + cat + '" berhasil dihapus!');
                 },
 
                 openPrintSJModal(sj) {
+                    this.isPrintingChecklist = false;
                     this.selectedSJForPrint = sj;
                     this.showPrintSJModal = true;
                 },
                 triggerPrint() {
                     window.print();
+                },
+
+                // ================= SUPER ADMIN METHODS =================
+                async saveCKProfile() {
+                    if (!this.ckProfileForm.name.trim()) {
+                        this.notify('Nama Central Kitchen tidak boleh kosong!');
+                        return;
+                    }
+                    const fb = window.firebaseModules;
+                    this.ckProfile = { ...this.ckProfileForm };
+                    this.saveLocalBackup();
+                    if (this.isCloudConnected && this.db) {
+                        await fb.setDoc(this.getDocRef('settings', 'ckProfile'), this.ckProfile).catch(e => this.handleFirestorePermissionError(e));
+                    }
+                    this.notify('Profil & Alamat Central Kitchen berhasil diperbarui!');
+                },
+
+                openOutletModal() {
+                    this.isEditingOutlet = false;
+                    const nextNum = String(this.outlets.length + 1).padStart(2, '0');
+                    this.outletForm = { id: 'OUT-' + nextNum, name: '', address: '', phone: '' };
+                    this.showOutletModal = true;
+                },
+                openEditOutletModal(out) {
+                    this.isEditingOutlet = true;
+                    this.outletForm = { id: out.id, name: out.name, address: out.address || '', phone: out.phone || '' };
+                    this.showOutletModal = true;
+                },
+                async saveOutletForm() {
+                    if (!this.outletForm.id.trim() || !this.outletForm.name.trim()) {
+                        this.notify('Kode ID dan Nama Outlet Resto wajib diisi!');
+                        return;
+                    }
+                    const fb = window.firebaseModules;
+                    const outletData = {
+                        id: this.outletForm.id.trim().toUpperCase(),
+                        name: this.outletForm.name.trim(),
+                        address: this.outletForm.address.trim(),
+                        phone: this.outletForm.phone.trim()
+                    };
+                    const idx = this.outlets.findIndex(o => o.id === outletData.id);
+                    if (idx !== -1) {
+                        this.outlets[idx] = outletData;
+                    } else {
+                        this.outlets.push(outletData);
+                    }
+                    this.saveLocalBackup();
+                    if (this.isCloudConnected && this.db) {
+                        await fb.setDoc(this.getDocRef('outlets', outletData.id), outletData).catch(e => this.handleFirestorePermissionError(e));
+                    }
+                    this.showOutletModal = false;
+                    this.notify('Data Outlet Resto berhasil disimpan!');
+                },
+                async deleteOutlet(id) {
+                    if (this.outlets.length <= 1) {
+                        this.notify('Minimal harus ada 1 Outlet Resto aktif!');
+                        return;
+                    }
+                    this.outlets = this.outlets.filter(o => o.id !== id);
+                    this.saveLocalBackup();
+                    if (this.isCloudConnected && this.db) {
+                        const fb = window.firebaseModules;
+                        await fb.deleteDoc(this.getDocRef('outlets', id)).catch(e => this.handleFirestorePermissionError(e));
+                    }
+                    this.notify('Outlet berhasil dihapus!');
+                },
+
+                openSuperAdminEditPO(po) {
+                    this.adminEditingPO = JSON.parse(JSON.stringify(po));
+                    this.showAdminEditPOModal = true;
+                },
+                async saveAdminEditedPO() {
+                    const fb = window.firebaseModules;
+                    const validItems = this.adminEditingPO.items.filter(i => i.itemId && i.qty > 0);
+                    const idx = this.pos.findIndex(p => p.id === this.adminEditingPO.id);
+                    if (idx !== -1) {
+                        this.pos[idx] = {
+                            ...this.pos[idx],
+                            outletId: this.adminEditingPO.outletId,
+                            targetDate: this.adminEditingPO.targetDate,
+                            status: this.adminEditingPO.status,
+                            items: validItems,
+                            notes: this.adminEditingPO.notes || ''
+                        };
+                    }
+                    this.saveLocalBackup();
+                    if (this.isCloudConnected && this.db) {
+                        await fb.updateDoc(this.getDocRef('pos', this.adminEditingPO.id), {
+                            outletId: this.adminEditingPO.outletId,
+                            targetDate: this.adminEditingPO.targetDate,
+                            status: this.adminEditingPO.status,
+                            items: validItems,
+                            notes: this.adminEditingPO.notes || ''
+                        }).catch(e => this.handleFirestorePermissionError(e));
+                    }
+                    this.showAdminEditPOModal = false;
+                    this.notify('Data Purchase Order berhasil diperbarui oleh Super Admin!');
+                },
+                async deletePO(id) {
+                    this.pos = this.pos.filter(p => p.id !== id);
+                    this.saveLocalBackup();
+                    if (this.isCloudConnected && this.db) {
+                        const fb = window.firebaseModules;
+                        await fb.deleteDoc(this.getDocRef('pos', id)).catch(e => this.handleFirestorePermissionError(e));
+                    }
+                    this.notify('PO ' + id + ' telah dihapus permanen.');
+                },
+
+                openSuperAdminEditSJ(sj) {
+                    this.adminEditingSJ = JSON.parse(JSON.stringify(sj));
+                    this.showAdminEditSJModal = true;
+                },
+                async saveAdminEditedSJ() {
+                    const fb = window.firebaseModules;
+                    const idx = this.deliveryNotes.findIndex(s => s.id === this.adminEditingSJ.id);
+                    if (idx !== -1) {
+                        this.deliveryNotes[idx] = { ...this.deliveryNotes[idx], ...this.adminEditingSJ };
+                    }
+                    this.saveLocalBackup();
+                    if (this.isCloudConnected && this.db) {
+                        await fb.updateDoc(this.getDocRef('deliveryNotes', this.adminEditingSJ.id), {
+                            outletId: this.adminEditingSJ.outletId,
+                            status: this.adminEditingSJ.status,
+                            courierType: this.adminEditingSJ.courierType,
+                            driverName: this.adminEditingSJ.driverName,
+                            plateOrResi: this.adminEditingSJ.plateOrResi,
+                            senderName: this.adminEditingSJ.senderName,
+                            receiverName: this.adminEditingSJ.receiverName,
+                            items: this.adminEditingSJ.items
+                        }).catch(e => this.handleFirestorePermissionError(e));
+                    }
+                    this.showAdminEditSJModal = false;
+                    this.notify('Data Surat Jalan berhasil diperbarui oleh Super Admin!');
+                },
+                async deleteSJ(id) {
+                    this.deliveryNotes = this.deliveryNotes.filter(s => s.id !== id);
+                    this.saveLocalBackup();
+                    if (this.isCloudConnected && this.db) {
+                        const fb = window.firebaseModules;
+                        await fb.deleteDoc(this.getDocRef('deliveryNotes', id)).catch(e => this.handleFirestorePermissionError(e));
+                    }
+                    this.notify('Surat Jalan ' + id + ' telah dihapus permanen.');
                 },
 
                 viewPODetail(po) {
@@ -1359,7 +2514,13 @@
                             return;
                         }
                     }
-                    alert('PO ID: ' + po.id + '\nStatus: ' + this.getStatusLabel(po.status));
+                    const fallbackSJ = this.deliveryNotes.find(s => s.poId === po.id);
+                    if (fallbackSJ) {
+                        this.openPrintSJModal(fallbackSJ);
+                        return;
+                    }
+                    this.selectedPOForDetail = po;
+                    this.showPODetailModal = true;
                 }
             }
         }
