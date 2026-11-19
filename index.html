@@ -83,17 +83,30 @@
     <!-- ================= ROLE-BASED PIN LOGIN GATE ================= -->
     <div x-show="!isAuthenticated" class="min-h-screen bg-gradient-to-br from-red-950 via-red-900 to-slate-900 flex items-center justify-center p-4 no-print" x-cloak>
         <div class="max-w-md w-full bg-white rounded-3xl shadow-2xl overflow-hidden border border-red-200/30">
-            <!-- Header Brand -->
+            <!-- Header Brand (Mendukung Custom Banner & Custom Logo) -->
             <div class="bg-red-800 text-white p-6 text-center relative overflow-hidden">
-                <div class="w-16 h-16 bg-white text-red-800 rounded-2xl flex items-center justify-center text-3xl font-black mx-auto mb-3 shadow-lg">
-                    <i class="fa-solid fa-pepper-hot"></i>
-                </div>
-                <h1 class="font-black text-xl tracking-tight">Warung Sambal Samuda Nusantara</h1>
-                <p class="text-xs text-red-200 mt-1">Sistem Supply Chain, PO & Surat Jalan Terpadu</p>
-                <div class="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold"
-                     :class="isCloudConnected ? 'bg-emerald-950/60 text-emerald-300 border border-emerald-500/30' : 'bg-amber-950/60 text-amber-300 border border-amber-500/30'">
-                    <span class="w-2 h-2 rounded-full" :class="isCloudConnected ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'"></span>
-                    <span x-text="isCloudConnected ? 'Firebase Cloud Ready' : 'Menghubungkan Cloud / Mode Lokal'"></span>
+                <template x-if="branding.bannerUrl">
+                    <div class="absolute inset-0 z-0">
+                        <img :src="branding.bannerUrl" @error="branding.bannerUrl = ''" alt="Banner Brand" class="w-full h-full object-cover">
+                        <div class="absolute inset-0 bg-gradient-to-b from-slate-950/70 via-red-950/75 to-red-900/90" :style="'opacity:' + (branding.bannerOpacity || 0.78)"></div>
+                    </div>
+                </template>
+                <div class="relative z-10">
+                    <div class="w-16 h-16 bg-white text-red-800 rounded-2xl flex items-center justify-center text-3xl font-black mx-auto mb-3 shadow-lg overflow-hidden border-2 border-white/80">
+                        <template x-if="branding.logoUrl">
+                            <img :src="branding.logoUrl" @error="branding.logoUrl = ''" alt="Logo Brand" class="w-full h-full object-contain p-1">
+                        </template>
+                        <template x-if="!branding.logoUrl">
+                            <i class="fa-solid fa-pepper-hot"></i>
+                        </template>
+                    </div>
+                    <h1 class="font-black text-xl tracking-tight drop-shadow-sm" x-text="ckProfile.name || 'Warung Sambal Samuda Nusantara'"></h1>
+                    <p class="text-xs text-red-100 mt-1 drop-shadow-sm">Sistem Supply Chain, PO & Surat Jalan Terpadu</p>
+                    <div class="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold backdrop-blur-sm"
+                         :class="isCloudConnected ? 'bg-emerald-950/75 text-emerald-300 border border-emerald-500/40' : 'bg-amber-950/75 text-amber-300 border border-amber-500/40'">
+                        <span class="w-2 h-2 rounded-full" :class="isCloudConnected ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'"></span>
+                        <span x-text="isCloudConnected ? 'Firebase Cloud Ready' : 'Menghubungkan Cloud / Mode Lokal'"></span>
+                    </div>
                 </div>
             </div>
 
@@ -198,15 +211,26 @@
     <!-- ================= MAIN AUTHENTICATED APPLICATION ================= -->
     <div x-show="isAuthenticated" x-cloak>
         <!-- TOP BAR / ROLE SWITCHER (FILTERED BY LOGIN ROLE) -->
-        <header class="bg-red-800 text-white shadow-md sticky top-0 z-50 no-print">
-            <div class="max-w-7xl mx-auto px-4 py-3 flex flex-col md:flex-row justify-between items-center gap-3">
+        <header class="bg-red-800 text-white shadow-md sticky top-0 z-50 no-print relative overflow-hidden">
+            <template x-if="branding.bannerUrl">
+                <div class="absolute inset-0 z-0 pointer-events-none">
+                    <img :src="branding.bannerUrl" @error="branding.bannerUrl = ''" alt="Header Banner" class="w-full h-full object-cover">
+                    <div class="absolute inset-0 bg-gradient-to-r from-red-950/90 via-red-900/80 to-slate-950/85" :style="'opacity:' + (branding.bannerOpacity || 0.78)"></div>
+                </div>
+            </template>
+            <div class="max-w-7xl mx-auto px-4 py-3 flex flex-col md:flex-row justify-between items-center gap-3 relative z-10">
                 <div class="flex items-center space-x-3">
-                    <div class="bg-white text-red-800 p-2 rounded-lg font-black text-xl shadow">
-                        <i class="fa-solid fa-pepper-hot"></i>
+                    <div class="bg-white text-red-800 w-11 h-11 rounded-xl font-black text-xl shadow flex items-center justify-center overflow-hidden shrink-0 border border-white/60">
+                        <template x-if="branding.logoUrl">
+                            <img :src="branding.logoUrl" @error="branding.logoUrl = ''" alt="Logo" class="w-full h-full object-contain p-0.5">
+                        </template>
+                        <template x-if="!branding.logoUrl">
+                            <i class="fa-solid fa-pepper-hot"></i>
+                        </template>
                     </div>
                     <div>
-                        <h1 class="font-bold text-lg leading-tight">Warung Sambal Samuda Nusantara</h1>
-                        <p class="text-xs text-red-200">Sistem Supply Chain, PO & Surat Jalan Terpadu (Multi-Device Realtime)</p>
+                        <h1 class="font-bold text-lg leading-tight drop-shadow-sm" x-text="ckProfile.name || 'Warung Sambal Samuda Nusantara'"></h1>
+                        <p class="text-xs text-red-100 drop-shadow-sm">Sistem Supply Chain, PO & Surat Jalan Terpadu (Multi-Device Realtime)</p>
                     </div>
                 </div>
 
@@ -227,13 +251,17 @@
                         </template>
 
                         <!-- Tab Central Kitchen: Tampil HANYA jika login CK atau Super Admin -->
-                        <template x-if="authRole === 'ck' || authRole === 'superadmin'">
-                            <button @click="currentRole = 'ck'"
-                                    :class="currentRole === 'ck' ? 'bg-white text-red-800 font-bold shadow' : 'text-white hover:bg-red-700/50'"
-                                    class="px-3 py-1.5 rounded-lg text-xs transition duration-150 whitespace-nowrap">
-                                Central Kitchen
-                            </button>
-                        </template>
+                    <template x-if="authRole === 'ck' || authRole === 'superadmin'">
+                        <button @click="currentRole = 'ck'"
+                                :class="currentRole === 'ck' ? 'bg-white text-red-800 font-bold shadow' : 'text-white hover:bg-red-700/50'"
+                                class="px-3 py-1.5 rounded-lg text-xs transition duration-150 whitespace-nowrap flex items-center gap-1.5">
+                            <span>Central Kitchen</span>
+                            <span x-show="lowStockItems.length > 0"
+                                  x-text="lowStockItems.length"
+                                  title="Item di bawah buffer (Perlu Produksi)"
+                                  class="px-1.5 py-0.5 text-[10px] font-black rounded-full bg-amber-400 text-red-950 animate-pulse"></span>
+                        </button>
+                    </template>
 
                         <!-- Tab Audit & Laporan: Tampil HANYA jika login CK atau Super Admin -->
                         <template x-if="authRole === 'ck' || authRole === 'superadmin'">
@@ -264,6 +292,25 @@
 
         <!-- MAIN CONTAINER -->
         <main class="max-w-7xl mx-auto px-4 py-6">
+
+            <!-- HERO BANNER WORKSPACE (JIKA CUSTOM BANNER DIAKTIFKAN) -->
+            <template x-if="branding.bannerUrl">
+                <div class="mb-6 rounded-2xl overflow-hidden shadow-md border border-slate-200 relative h-32 sm:h-40 no-print">
+                    <img :src="branding.bannerUrl" @error="branding.bannerUrl = ''" alt="Workspace Banner" class="w-full h-full object-cover">
+                    <div class="absolute inset-0 bg-gradient-to-r from-slate-950/85 via-red-950/60 to-transparent flex items-center px-6">
+                        <div class="flex items-center gap-4 text-white">
+                            <template x-if="branding.logoUrl">
+                                <img :src="branding.logoUrl" alt="Logo Brand" class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white p-1.5 object-contain shadow-lg shrink-0">
+                            </template>
+                            <div>
+                                <span class="inline-block bg-amber-400 text-slate-950 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider mb-1" x-text="ckProfile.subtitle || 'Central Kitchen & Distribution'"></span>
+                                <h2 class="text-lg sm:text-2xl font-black tracking-tight drop-shadow" x-text="ckProfile.name"></h2>
+                                <p class="text-xs text-slate-200 line-clamp-1" x-text="ckProfile.address"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </template>
 
             <!-- NOTIFICATION BANNER INFO -->
             <div class="mb-6 bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-3 no-print">
@@ -478,19 +525,136 @@
                         <p class="text-2xl font-black text-slate-800 mt-1" x-text="inventory.length"></p>
                     </div>
                     <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
-                        <p class="text-xs font-semibold text-slate-500">Stok Menipis (Below Buffer)</p>
-                        <p class="text-2xl font-black text-red-600 mt-1" x-text="inventory.filter(i => i.stock <= i.minStock).length"></p>
+                        <p class="text-xs font-semibold text-slate-500">Perlu Produksi (≤ Buffer)</p>
+                        <p class="text-2xl font-black text-red-600 mt-1" x-text="lowStockItems.length"></p>
                     </div>
                     <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between">
                         <div>
-                            <p class="text-xs font-semibold text-slate-500">Kelola Stok Gudang</p>
+                            <p class="text-xs font-semibold text-slate-500">Kelola Stok & Produksi</p>
                             <button @click="openRestockModal()" class="mt-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow">
-                                <i class="fa-solid fa-plus mr-1"></i> Restock Masuk
+                                <i class="fa-solid fa-plus mr-1"></i> Catat Produksi / Restock
                             </button>
                         </div>
                         <div class="text-2xl text-emerald-600"><i class="fa-solid fa-warehouse"></i></div>
                     </div>
                 </div>
+
+                <!-- PANEL PENGINGAT PRODUKSI OTOMATIS (JIKA STOK <= BUFFER) -->
+                <template x-if="lowStockItems.length > 0">
+                    <div class="bg-gradient-to-r from-amber-50 via-orange-50 to-red-50 border-2 border-amber-400 rounded-2xl shadow-md overflow-hidden">
+                        <div class="p-4 bg-amber-400/25 border-b border-amber-300 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-3">
+                            <div class="flex items-center gap-3">
+                                <div class="bg-red-600 text-white w-10 h-10 rounded-xl flex items-center justify-center text-lg shadow animate-bounce shrink-0">
+                                    <i class="fa-solid fa-fire-burner"></i>
+                                </div>
+                                <div>
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <span class="bg-red-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider">Pengingat & Rencana Produksi</span>
+                                        <h3 class="font-black text-slate-900 text-sm" x-text="lowStockItems.length + ' Bahan Baku / Sambal di Bawah Buffer Minimum!'"></h3>
+                                    </div>
+                                    <p class="text-xs text-slate-700 mt-0.5">Centang item dan atur urutan prioritas mana yang akan diproduksi terlebih dahulu oleh tim dapur Central Kitchen.</p>
+                                </div>
+                            </div>
+                            <div class="flex flex-wrap items-center gap-2">
+                                <button type="button" @click="selectAllProductionItems()" class="bg-white hover:bg-slate-100 text-slate-800 border border-slate-300 px-3 py-2 rounded-xl text-xs font-bold shadow-sm transition">
+                                    <i class="fa-solid fa-check-double text-emerald-600 mr-1"></i> Pilih Semua
+                                </button>
+                                <button type="button" @click="clearProductionSelection()" x-show="selectedProductionIds.length > 0" class="bg-white hover:bg-slate-100 text-slate-600 border border-slate-300 px-3 py-2 rounded-xl text-xs font-bold shadow-sm transition">
+                                    Reset Pilihan
+                                </button>
+                                <button type="button" @click="openBatchProductionModal()" :disabled="selectedProductionIds.length === 0"
+                                        :class="selectedProductionIds.length === 0 ? 'bg-slate-300 text-slate-500 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow'"
+                                        class="px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition whitespace-nowrap">
+                                    <i class="fa-solid fa-clipboard-check"></i>
+                                    <span x-text="'Catat Selesai Produksi (' + selectedProductionIds.length + ')'"></span>
+                                </button>
+                                <button type="button" @click="printProductionReminderList()" class="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-xl text-xs font-bold shadow flex items-center gap-2 whitespace-nowrap">
+                                    <i class="fa-solid fa-print text-amber-400"></i>
+                                    <span x-text="selectedProductionIds.length > 0 ? 'Cetak Rencana Terpilih (' + selectedProductionIds.length + ')' : 'Cetak Semua Rencana'"></span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="p-4 overflow-x-auto">
+                            <table class="w-full text-left text-xs">
+                                <thead>
+                                    <tr class="text-slate-600 border-b border-amber-200/80">
+                                        <th class="pb-2.5 w-10 text-center">Pilih</th>
+                                        <th class="pb-2.5 w-24 text-center">Urutan Prioritas</th>
+                                        <th class="pb-2.5">Status Stok</th>
+                                        <th class="pb-2.5">Nama Item / Bahan Baku</th>
+                                        <th class="pb-2.5 text-center">Stok Saat Ini</th>
+                                        <th class="pb-2.5 text-center">Buffer Min.</th>
+                                        <th class="pb-2.5 text-center">Target Produksi</th>
+                                        <th class="pb-2.5 text-right">Tindakan Cepat</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-amber-200/50">
+                                    <template x-for="item in orderedLowStockItems" :key="item.id">
+                                        <tr class="transition" :class="isItemSelectedForProduction(item.id) ? 'bg-emerald-50/90' : 'hover:bg-white/70'">
+                                            <td class="py-2.5 text-center">
+                                                <input type="checkbox"
+                                                       :checked="isItemSelectedForProduction(item.id)"
+                                                       @change="toggleProductionItem(item.id)"
+                                                       class="w-4 h-4 rounded border-slate-400 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+                                            </td>
+                                            <td class="py-2.5 text-center">
+                                                <template x-if="isItemSelectedForProduction(item.id)">
+                                                    <div class="inline-flex items-center gap-1 bg-slate-900 text-white px-2 py-1 rounded-lg font-black text-[11px]">
+                                                        <span x-text="'#' + (getProductionPriorityIndex(item.id) + 1)"></span>
+                                                        <div class="flex flex-col leading-none ml-1">
+                                                            <button type="button" @click="moveProductionPriority(item.id, -1)" :disabled="getProductionPriorityIndex(item.id) === 0" class="hover:text-amber-400 disabled:opacity-30 text-[9px]"><i class="fa-solid fa-caret-up"></i></button>
+                                                            <button type="button" @click="moveProductionPriority(item.id, 1)" :disabled="getProductionPriorityIndex(item.id) === selectedProductionIds.length - 1" class="hover:text-amber-400 disabled:opacity-30 text-[9px]"><i class="fa-solid fa-caret-down"></i></button>
+                                                        </div>
+                                                    </div>
+                                                </template>
+                                                <template x-if="!isItemSelectedForProduction(item.id)">
+                                                    <span class="text-[11px] text-slate-400 italic">-</span>
+                                                </template>
+                                            </td>
+                                            <td class="py-2.5">
+                                                <span x-show="Number(item.stock) <= 0" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black bg-red-600 text-white shadow-sm">
+                                                    <i class="fa-solid fa-circle-exclamation"></i> KRITIS - HABIS
+                                                </span>
+                                                <span x-show="Number(item.stock) > 0" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black bg-amber-500 text-slate-950">
+                                                    <i class="fa-solid fa-triangle-exclamation"></i> PERLU PRODUKSI
+                                                </span>
+                                            </td>
+                                            <td class="py-2.5">
+                                                <span class="font-bold text-slate-900 block" x-text="item.name"></span>
+                                                <span class="text-[10px] text-slate-500" x-text="item.category"></span>
+                                            </td>
+                                            <td class="py-2.5 text-center font-black text-red-700" x-text="item.stock + ' ' + item.unit"></td>
+                                            <td class="py-2.5 text-center font-semibold text-slate-700" x-text="getItemMinBuffer(item) + ' ' + item.unit"></td>
+                                            <td class="py-2.5 text-center">
+                                                <div class="inline-flex items-center gap-1">
+                                                    <input type="number" min="1"
+                                                           :value="getCustomProductionQty(item)"
+                                                           @input="setCustomProductionQty(item.id, $event.target.value)"
+                                                           class="w-20 border border-emerald-400 rounded-lg p-1 text-center font-black text-emerald-900 bg-white text-xs focus:ring-2 focus:ring-emerald-500">
+                                                    <span class="text-[11px] font-semibold text-slate-600" x-text="item.unit"></span>
+                                                </div>
+                                            </td>
+                                            <td class="py-2.5 text-right whitespace-nowrap">
+                                                <button type="button" @click="openQuickProductionModal(item)" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg font-bold shadow-sm transition inline-flex items-center gap-1.5">
+                                                    <i class="fa-solid fa-plus-circle"></i> Catat 1 Item
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </template>
+                <template x-if="lowStockItems.length === 0">
+                    <div class="bg-emerald-50 border border-emerald-200 rounded-2xl px-4 py-3 flex items-center justify-between text-xs text-emerald-900">
+                        <div class="flex items-center gap-2.5 font-semibold">
+                            <i class="fa-solid fa-circle-check text-emerald-600 text-base"></i>
+                            <span>Semua stok bahan baku & olahan sambal di Central Kitchen berada di atas batas buffer minimum (Aman).</span>
+                        </div>
+                        <span class="text-[11px] font-bold bg-white px-2.5 py-1 rounded-lg border border-emerald-200 text-emerald-700">Status Produksi: Aman</span>
+                    </div>
+                </template>
 
                 <!-- Antrian PO Masuk dari Seluruh Outlet -->
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
@@ -571,9 +735,9 @@
                                         <td class="py-3 font-bold text-slate-800" x-text="item.name"></td>
                                         <td class="py-3 text-slate-600" x-text="item.category"></td>
                                         <td class="py-3 text-center">
-                                            <span class="px-2.5 py-1 rounded-lg font-black" :class="item.stock <= item.minStock ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-800'" x-text="item.stock + ' ' + item.unit"></span>
+                                            <span class="px-2.5 py-1 rounded-lg font-black" :class="Number(item.stock) <= getItemMinBuffer(item) ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-800'" x-text="item.stock + ' ' + item.unit"></span>
                                         </td>
-                                        <td class="py-3 text-center text-slate-500" x-text="item.minStock + ' ' + item.unit"></td>
+                                        <td class="py-3 text-center text-slate-500" x-text="getItemMinBuffer(item) + ' ' + item.unit"></td>
                                         <td class="py-3 text-right space-x-1 whitespace-nowrap">
                                             <button @click="quickAdjustStock(item, -1)" class="bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded font-bold">-1</button>
                                             <button @click="quickAdjustStock(item, 1)" class="bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded font-bold">+1</button>
@@ -756,9 +920,108 @@
                     </div>
                     <div class="flex flex-wrap gap-2">
                         <button @click="superAdminTab = 'locations'" :class="superAdminTab === 'locations' ? 'bg-amber-400 text-slate-950 font-bold' : 'bg-slate-700 text-white hover:bg-slate-600'" class="px-3.5 py-2 rounded-xl text-xs transition">Outlet & Central Kitchen</button>
+                        <button @click="superAdminTab = 'branding'" :class="superAdminTab === 'branding' ? 'bg-amber-400 text-slate-950 font-bold' : 'bg-slate-700 text-white hover:bg-slate-600'" class="px-3.5 py-2 rounded-xl text-xs transition"><i class="fa-solid fa-image mr-1"></i> Logo & Banner</button>
                         <button @click="superAdminTab = 'inventory'" :class="superAdminTab === 'inventory' ? 'bg-amber-400 text-slate-950 font-bold' : 'bg-slate-700 text-white hover:bg-slate-600'" class="px-3.5 py-2 rounded-xl text-xs transition">Master Produk & Kategori</button>
                         <button @click="superAdminTab = 'transactions'" :class="superAdminTab === 'transactions' ? 'bg-amber-400 text-slate-950 font-bold' : 'bg-slate-700 text-white hover:bg-slate-600'" class="px-3.5 py-2 rounded-xl text-xs transition">Semua PO & Surat Jalan</button>
                         <button @click="superAdminTab = 'security'" :class="superAdminTab === 'security' ? 'bg-amber-400 text-slate-950 font-bold' : 'bg-slate-700 text-white hover:bg-slate-600'" class="px-3.5 py-2 rounded-xl text-xs transition"><i class="fa-solid fa-key mr-1"></i> Keamanan & PIN Login</button>
+                    </div>
+                </div>
+
+                <!-- TAB BARU SUPER ADMIN: LOGO & BANNER BRANDING -->
+                <div x-show="superAdminTab === 'branding'" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Pengaturan Logo Brand -->
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+                        <div class="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+                            <div>
+                                <h3 class="font-bold text-slate-800 text-sm"><i class="fa-solid fa-stamp text-red-600 mr-2"></i> Pengaturan Logo Brand</h3>
+                                <p class="text-[11px] text-slate-500">Tampil di Halaman Login, Header Atas, dan Kop Surat Jalan</p>
+                            </div>
+                            <button type="button" @click="resetLogoBranding()" class="text-xs bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-1.5 rounded-xl font-bold transition">
+                                <i class="fa-solid fa-rotate-left mr-1"></i> Reset Default
+                            </button>
+                        </div>
+                        <div class="p-5 space-y-4 text-xs flex-1">
+                            <!-- Preview Logo -->
+                            <div class="bg-slate-50 border-2 border-dashed border-slate-300 rounded-2xl p-4 flex items-center gap-4">
+                                <div class="w-20 h-20 rounded-2xl bg-white border border-slate-200 shadow-sm flex items-center justify-center overflow-hidden shrink-0 text-3xl text-red-700">
+                                    <template x-if="brandingForm.logoUrl">
+                                        <img :src="brandingForm.logoUrl" alt="Preview Logo" class="w-full h-full object-contain p-1.5">
+                                    </template>
+                                    <template x-if="!brandingForm.logoUrl">
+                                        <i class="fa-solid fa-pepper-hot"></i>
+                                    </template>
+                                </div>
+                                <div class="space-y-1">
+                                    <p class="font-bold text-slate-800">Pratinjau Logo Saat Ini</p>
+                                    <p class="text-[11px] text-slate-500">Rekomendasi rasio persegi (1:1), format PNG transparan atau JPG. Otomatis dikompres agar ringan di semua HP/Laptop.</p>
+                                </div>
+                            </div>
+
+                            <!-- Upload File Logo -->
+                            <div>
+                                <label class="block font-bold text-slate-700 mb-1.5">Unggah File Logo dari Perangkat:</label>
+                                <input type="file" accept="image/*" @change="handleBrandingImageUpload($event, 'logo')" class="w-full text-xs text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-red-50 file:text-red-700 hover:file:bg-red-100 border border-slate-300 rounded-xl p-1.5 bg-slate-50">
+                            </div>
+
+                            <!-- Atau URL Logo -->
+                            <div>
+                                <label class="block font-bold text-slate-700 mb-1">Atau Masukkan Tautan (URL) Gambar Logo:</label>
+                                <input type="text" x-model="brandingForm.logoUrl" placeholder="https://contoh.com/logo-samuda.png" class="w-full border border-slate-300 rounded-xl p-2.5 bg-slate-50 font-medium">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pengaturan Header Banner -->
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+                        <div class="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+                            <div>
+                                <h3 class="font-bold text-slate-800 text-sm"><i class="fa-solid fa-panorama text-red-600 mr-2"></i> Pengaturan Header Banner</h3>
+                                <p class="text-[11px] text-slate-500">Tampil di Halaman Login & Spanduk Utama Dashboard</p>
+                            </div>
+                            <button type="button" @click="resetBannerBranding()" class="text-xs bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-1.5 rounded-xl font-bold transition">
+                                <i class="fa-solid fa-rotate-left mr-1"></i> Hapus Banner
+                            </button>
+                        </div>
+                        <div class="p-5 space-y-4 text-xs flex-1">
+                            <!-- Preview Banner -->
+                            <div class="relative h-28 rounded-2xl overflow-hidden border-2 border-dashed border-slate-300 bg-gradient-to-r from-red-900 to-slate-900 flex items-center justify-center">
+                                <template x-if="brandingForm.bannerUrl">
+                                    <img :src="brandingForm.bannerUrl" alt="Preview Banner" class="w-full h-full object-cover">
+                                </template>
+                                <div class="absolute inset-0 bg-slate-950 flex items-center justify-center text-white px-4 text-center" :style="'opacity:' + (brandingForm.bannerUrl ? (brandingForm.bannerOpacity || 0.75) : 0.3)">
+                                    <span class="font-bold text-xs" x-text="brandingForm.bannerUrl ? 'Pratinjau Banner Aktif' : 'Belum ada gambar banner (Menggunakan gradien merah default)'"></span>
+                                </div>
+                            </div>
+
+                            <!-- Upload File Banner -->
+                            <div>
+                                <label class="block font-bold text-slate-700 mb-1.5">Unggah File Banner dari Perangkat:</label>
+                                <input type="file" accept="image/*" @change="handleBrandingImageUpload($event, 'banner')" class="w-full text-xs text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-red-50 file:text-red-700 hover:file:bg-red-100 border border-slate-300 rounded-xl p-1.5 bg-slate-50">
+                            </div>
+
+                            <!-- Atau URL Banner -->
+                            <div>
+                                <label class="block font-bold text-slate-700 mb-1">Atau Masukkan Tautan (URL) Gambar Banner:</label>
+                                <input type="text" x-model="brandingForm.bannerUrl" placeholder="https://contoh.com/banner-resto.jpg" class="w-full border border-slate-300 rounded-xl p-2.5 bg-slate-50 font-medium">
+                            </div>
+
+                            <!-- Tingkat Gelap Overlay Banner -->
+                            <div>
+                                <div class="flex justify-between items-center mb-1">
+                                    <label class="font-bold text-slate-700">Tingkat Gelap Lapisan Teks (Kontras):</label>
+                                    <span class="font-mono font-bold text-red-700" x-text="Math.round((brandingForm.bannerOpacity || 0.78) * 100) + '%'"></span>
+                                </div>
+                                <input type="range" min="0.3" max="0.95" step="0.05" x-model.number="brandingForm.bannerOpacity" class="w-full accent-red-600">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tombol Simpan Global Branding -->
+                    <div class="lg:col-span-2 bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-3">
+                        <p class="text-xs text-slate-600"><i class="fa-solid fa-cloud-arrow-up text-emerald-600 mr-1.5"></i> Perubahan Logo & Banner langsung tersimpan ke Firebase Cloud dan otomatis tampil di semua perangkat.</p>
+                        <button type="button" @click="saveBrandingSettings()" class="px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold shadow transition flex items-center gap-2">
+                            <i class="fa-solid fa-floppy-disk"></i> Simpan Logo & Banner
+                        </button>
                     </div>
                 </div>
 
@@ -1017,201 +1280,136 @@
                     </div>
                     <div class="space-y-2">
                         <template x-for="(item, index) in newPO.items" :key="index">
-                            <div class="flex items-center gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
-                                <div class="flex-1">
-                                    <label class="block text-[10px] text-slate-500 mb-0.5">Pilih Bahan Baku (Stok Ready CK tercantum)</label>
-                                    <select x-model="item.itemId" class="w-full border border-slate-300 rounded-lg p-2 font-medium bg-white text-xs">
+                            <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-1.5">
+                                <div class="flex items-center gap-2">
+                                    <select x-model="item.itemId" class="flex-1 border border-slate-300 rounded-lg p-2 bg-white font-medium">
                                         <option value="">-- Pilih Bahan Baku --</option>
                                         <template x-for="inv in inventory" :key="inv.id">
-                                            <option :value="inv.id" x-text="inv.name + ' (Stok Ready CK: ' + inv.stock + ' ' + inv.unit + ')'"></option>
+                                            <option :value="inv.id" x-text="inv.name + ' — Stok Real CK: ' + (Number(inv.stock) || 0) + ' ' + inv.unit"></option>
                                         </template>
                                     </select>
+                                    <input type="number" min="1" x-model.number="item.qty" class="w-24 border border-slate-300 rounded-lg p-2 text-center font-bold bg-white">
+                                    <span class="text-slate-500 font-medium w-12" x-text="getItemUnit(item.itemId)"></span>
+                                    <button type="button" @click="removeItemFromPOForm(index)" class="text-red-500 hover:text-red-700 p-2 font-bold">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
                                 </div>
-                                <div class="w-28">
-                                    <label class="block text-[10px] text-slate-500 mb-0.5">Jumlah PO</label>
-                                    <input type="number" min="1" x-model.number="item.qty" class="w-full border border-slate-300 rounded-lg p-2 font-bold bg-white text-xs">
-                                </div>
-                                <div class="pt-4">
-                                    <button @click="removeItemFromPOForm(index)" class="text-red-500 hover:text-red-700 p-2 font-bold"><i class="fa-solid fa-trash"></i></button>
-                                </div>
+                                <template x-if="item.itemId">
+                                    <div class="flex flex-wrap items-center justify-between gap-2 px-1 text-[11px]">
+                                        <div class="flex items-center gap-1.5">
+                                            <span class="text-slate-500">Stok Real Central Kitchen:</span>
+                                            <span class="px-2 py-0.5 rounded-md font-black"
+                                                  :class="getItemStock(item.itemId) <= 0 ? 'bg-red-100 text-red-700' : (Number(item.qty) > getItemStock(item.itemId) ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800')"
+                                                  x-text="getItemStock(item.itemId) + ' ' + getItemUnit(item.itemId)"></span>
+                                        </div>
+                                        <span x-show="getItemStock(item.itemId) <= 0" class="text-red-600 font-bold">
+                                            <i class="fa-solid fa-circle-exclamation mr-1"></i> Stok CK sedang kosong
+                                        </span>
+                                        <span x-show="getItemStock(item.itemId) > 0 && Number(item.qty) > getItemStock(item.itemId)" class="text-amber-700 font-bold">
+                                            <i class="fa-solid fa-triangle-exclamation mr-1"></i> Pesanan melebihi stok ready CK
+                                        </span>
+                                        <span x-show="getItemStock(item.itemId) > 0 && Number(item.qty) <= getItemStock(item.itemId)" class="text-emerald-700 font-semibold">
+                                            <i class="fa-solid fa-circle-check mr-1"></i> Stok CK mencukupi
+                                        </span>
+                                    </div>
+                                </template>
                             </div>
                         </template>
                     </div>
                 </div>
                 <div>
-                    <label class="block font-semibold text-slate-700 mb-1">Catatan Khusus Outlet (Opsional)</label>
-                    <textarea x-model="newPO.notes" rows="2" placeholder="Contoh: Mohon dikirim pagi sebelum jam 09.00 WIB" class="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50 font-medium"></textarea>
+                    <label class="block font-semibold text-slate-700 mb-1">Catatan Tambahan untuk Central Kitchen</label>
+                    <textarea x-model="newPO.notes" rows="2" placeholder="Contoh: Kirim pagi sebelum jam 10.00 WIB" class="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50 font-medium"></textarea>
                 </div>
             </div>
             <div class="bg-slate-50 p-4 border-t border-slate-200 flex justify-end gap-3">
                 <button @click="showCreatePOModal = false" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-300">Batal</button>
-                <button @click="submitNewPO()" class="px-5 py-2 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 shadow" x-text="editingRestoPOId ? 'Simpan Perubahan PO' : 'Kirim PO ke CK'"></button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Proses PO & Edit Qty Kirim (Central Kitchen) -->
-    <div x-show="showProcessPOModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" x-cloak>
-        <div class="bg-white rounded-2xl shadow-2xl max-w-3xl w-full overflow-hidden border border-slate-200">
-            <div class="bg-red-800 text-white p-4 flex justify-between items-center">
-                <h3 class="font-bold text-base"><i class="fa-solid fa-boxes-packing mr-2"></i> Proses PO & Validasi Kirim Central Kitchen</h3>
-                <button @click="showProcessPOModal = false" class="text-white hover:text-red-200 text-lg font-bold">&times;</button>
-            </div>
-            <div class="p-6 space-y-4 max-h-[75vh] overflow-y-auto text-xs">
-                <template x-if="activePOForProcess">
-                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 flex justify-between">
-                        <div>
-                            <p class="font-bold text-slate-800">No. PO: <span class="text-red-600" x-text="activePOForProcess.id"></span></p>
-                            <p class="text-slate-600">Outlet Pemesan: <span class="font-semibold" x-text="getOutletName(activePOForProcess.outletId)"></span></p>
-                        </div>
-                        <div class="text-right">
-                            <p class="text-slate-500">Target Kirim: <span class="font-bold text-slate-800" x-text="formatDate(activePOForProcess.targetDate)"></span></p>
-                            <p class="text-slate-500 text-[10px]">Catatan: <span x-text="activePOForProcess.notes || '-'"></span></p>
-                        </div>
-                    </div>
-                </template>
-
-                <div>
-                    <label class="block font-bold text-slate-700 mb-2">Penyesuaian Kuantitas Kirim (Staf CK dapat mengedit Qty Kirim)</label>
-                    <table class="w-full text-left border-collapse text-xs">
-                        <thead>
-                            <tr class="bg-slate-100 text-slate-600 border-b border-slate-200">
-                                <th class="p-2.5">Bahan Baku</th>
-                                <th class="p-2.5 text-center">Stok Ready CK</th>
-                                <th class="p-2.5 text-center">Qty Diminta Resto</th>
-                                <th class="p-2.5 text-center">Qty Disetujui / Kirim</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-100">
-                            <template x-for="item in processItems" :key="item.itemId">
-                                <tr>
-                                    <td class="p-2.5 font-semibold text-slate-800" x-text="getItemName(item.itemId)"></td>
-                                    <td class="p-2.5 text-center font-bold" :class="getItemStock(item.itemId) < item.qtyShipped ? 'text-red-600' : 'text-emerald-700'" x-text="getItemStock(item.itemId) + ' ' + getItemUnit(item.itemId)"></td>
-                                    <td class="p-2.5 text-center font-bold text-slate-700" x-text="item.qtyRequested + ' ' + getItemUnit(item.itemId)"></td>
-                                    <td class="p-2.5 text-center">
-                                        <input type="number" min="0" :max="getItemStock(item.itemId)" x-model.number="item.qtyShipped" class="w-24 border border-slate-300 rounded-lg p-1.5 text-center font-bold bg-white text-xs">
-                                    </td>
-                                </tr>
-                            </template>
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2 border-t border-slate-200">
-                    <div>
-                        <label class="block font-semibold text-slate-700 mb-1">Jenis Kurir / Pengiriman</label>
-                        <select x-model="dispatchForm.courierType" class="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50 font-medium">
-                            <option value="Internal Driver (Samuda Fleet)">Internal Driver (Samuda Fleet)</option>
-                            <option value="Lalamove Express">Lalamove Express</option>
-                            <option value="GrabExpress Corporate">GrabExpress Corporate</option>
-                            <option value="GoSend Intercity">GoSend Intercity</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block font-semibold text-slate-700 mb-1">Nama Driver / Kurir</label>
-                        <input type="text" x-model="dispatchForm.driverName" placeholder="Contoh: Pak Joko" class="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50 font-medium">
-                    </div>
-                    <div>
-                        <label class="block font-semibold text-slate-700 mb-1">Plat Kendaraan / No. Resi</label>
-                        <input type="text" x-model="dispatchForm.plateOrResi" placeholder="B 9482 SKN" class="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50 font-medium">
-                    </div>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
-                    <div>
-                        <label class="block font-semibold text-slate-700 mb-1">Nama Pengirim (Staf Central Kitchen)</label>
-                        <input type="text" x-model="dispatchForm.senderName" placeholder="Nama Petugas CK" class="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50 font-medium">
-                    </div>
-                    <div>
-                        <label class="block font-semibold text-slate-700 mb-1">Nama Penerima Tujuan (Diisi saat Diterima di Outlet)</label>
-                        <input type="text" x-model="dispatchForm.receiverName" placeholder="Akan diisi manager resto saat barang sampai" class="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-100 font-medium italic" disabled>
-                    </div>
-                </div>
-            </div>
-            <div class="bg-slate-50 p-4 border-t border-slate-200 flex justify-between items-center">
-                <button @click="printChecklistForm()" class="px-4 py-2 bg-slate-800 text-white rounded-xl font-bold hover:bg-slate-900 flex items-center gap-2">
-                    <i class="fa-solid fa-print"></i> Cetak Cek Fisik / Checklist Gudang
+                <button @click="submitNewPO()" class="px-5 py-2 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 shadow flex items-center gap-1.5">
+                    <i class="fa-solid fa-paper-plane"></i>
+                    <span x-text="editingRestoPOId ? 'Simpan Perubahan PO' : 'Kirim PO ke Central Kitchen'"></span>
                 </button>
-                <div class="flex gap-2">
-                    <button @click="showProcessPOModal = false" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-300">Batal</button>
-                    <button @click="confirmProcessPOAndDispatch()" class="px-5 py-2 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 shadow">Konfirmasi Kirim & Potong Stok</button>
-                </div>
             </div>
         </div>
     </div>
 
-    <!-- Modal Konfirmasi Terima Barang (Resto) -->
-    <div x-show="showReceiveModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" x-cloak>
-        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden border border-slate-200">
+    <!-- Modal Restock / Hasil Produksi Gudang CK -->
+    <div x-show="showRestockModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" x-cloak>
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200">
             <div class="bg-emerald-800 text-white p-4 flex justify-between items-center">
-                <h3 class="font-bold text-base"><i class="fa-solid fa-clipboard-check mr-2"></i> Konfirmasi Terima Barang di Resto</h3>
-                <button @click="showReceiveModal = false" class="text-white hover:text-emerald-200 text-lg font-bold">&times;</button>
+                <h3 class="font-bold text-base"><i class="fa-solid fa-fire-burner mr-2"></i> Catat Hasil Produksi / Restock CK</h3>
+                <button @click="showRestockModal = false" class="text-white hover:text-emerald-200 text-lg font-bold">&times;</button>
             </div>
-            <div class="p-6 space-y-4 max-h-[75vh] overflow-y-auto text-xs">
-                <template x-if="activeSJForReceive">
-                    <div class="bg-emerald-50 p-3.5 rounded-xl border border-emerald-200 flex flex-col sm:flex-row justify-between gap-2">
-                        <div>
-                            <p class="font-bold text-slate-800">No. Surat Jalan: <span class="text-emerald-700" x-text="activeSJForReceive.id"></span></p>
-                            <p class="text-slate-600">Kurir Pengantar: <span class="font-semibold" x-text="activeSJForReceive.driverName + ' (' + activeSJForReceive.plateOrResi + ')'"></span></p>
-                        </div>
-                        <div class="sm:text-right">
-                            <span class="inline-block bg-white text-emerald-800 border border-emerald-200 px-2.5 py-1 rounded-lg text-[11px] font-bold">
-                                Langkah 1: Cek Jumlah &bull; Langkah 2: Isi Nama &bull; Langkah 3: Simpan
-                            </span>
-                        </div>
-                    </div>
-                </template>
-
+            <div class="p-6 space-y-4 text-xs">
                 <div>
-                    <div class="flex flex-wrap justify-between items-center gap-2 mb-2">
-                        <label class="font-bold text-slate-700">1. Periksa Jumlah Barang yang Tiba di Outlet:</label>
-                        <button type="button" @click="receiveItemsForm.forEach(i => i.qtyReceived = i.qtyShipped)" class="bg-emerald-100 hover:bg-emerald-200 text-emerald-800 px-2.5 py-1 rounded-lg font-bold text-[11px] transition">
-                            <i class="fa-solid fa-check mr-1"></i> Sesuai Semua (Samakan dengan Kiriman)
-                        </button>
-                    </div>
-                    <table class="w-full text-left border-collapse text-xs border border-slate-200 rounded-lg overflow-hidden">
-                        <thead>
-                            <tr class="bg-slate-100 text-slate-600 border-b border-slate-200">
-                                <th class="p-2.5">Nama Bahan Baku</th>
-                                <th class="p-2.5 text-center">Dikirim CK</th>
-                                <th class="p-2.5 text-center">Jumlah Diterima Fisik</th>
-                                <th class="p-2.5 text-center">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-100">
-                            <template x-for="item in receiveItemsForm" :key="item.itemId">
-                                <tr :class="item.qtyReceived !== item.qtyShipped ? 'bg-amber-50/70' : ''">
-                                    <td class="p-2.5 font-semibold text-slate-800" x-text="getItemName(item.itemId)"></td>
-                                    <td class="p-2.5 text-center font-bold text-slate-700" x-text="item.qtyShipped + ' ' + getItemUnit(item.itemId)"></td>
-                                    <td class="p-2.5 text-center">
-                                        <div class="inline-flex items-center gap-1">
-                                            <input type="number" min="0" x-model.number="item.qtyReceived" class="w-20 border border-slate-300 rounded-lg p-1.5 text-center font-bold bg-white text-xs focus:ring-2 focus:ring-emerald-500">
-                                            <span class="text-slate-500 font-medium" x-text="getItemUnit(item.itemId)"></span>
-                                        </div>
-                                    </td>
-                                    <td class="p-2.5 text-center">
-                                        <span x-show="item.qtyReceived === item.qtyShipped" class="text-emerald-700 font-bold text-[11px]"><i class="fa-solid fa-circle-check"></i> Sesuai</span>
-                                        <span x-show="item.qtyReceived !== item.qtyShipped" class="text-amber-700 font-bold text-[11px]"><i class="fa-solid fa-triangle-exclamation"></i> Selisih (<span x-text="item.qtyReceived - item.qtyShipped"></span>)</span>
-                                    </td>
-                                </tr>
-                            </template>
-                        </tbody>
-                    </table>
+                    <label class="block font-semibold text-slate-700 mb-1">Pilih Bahan Baku / Produk Olahan</label>
+                    <select x-model="restockForm.itemId" class="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50 font-medium">
+                        <option value="">-- Pilih Bahan Baku --</option>
+                        <template x-for="inv in inventory" :key="inv.id">
+                            <option :value="inv.id" x-text="inv.name + ' (Stok: ' + inv.stock + ' ' + inv.unit + ' | Buffer: ' + getItemMinBuffer(inv) + ')'"></option>
+                        </template>
+                    </select>
                 </div>
-
                 <div>
-                    <label class="block font-bold text-slate-700 mb-1">2. Nama Staff / Manager Outlet yang Menerima <span class="text-red-600">*</span></label>
-                    <input type="text" x-model="receiveReceiverName" placeholder="Ketik nama Anda di sini (Contoh: Budi - Manager Outlet)" class="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50 font-bold focus:ring-2 focus:ring-emerald-500">
+                    <label class="block font-semibold text-slate-700 mb-1">Jumlah Hasil Produksi / Masuk Gudang</label>
+                    <input type="number" min="1" x-model.number="restockForm.qty" class="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50 font-bold">
                 </div>
-
                 <div>
-                    <label class="block font-semibold text-slate-700 mb-1">3. Catatan Penerimaan / Keterangan Selisih (Opsional)</label>
-                    <textarea x-model="receiveDiscrepancyNotes" rows="2" placeholder="Contoh: Barang diterima lengkap & kondisi baik" class="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50 font-medium"></textarea>
+                    <label class="block font-semibold text-slate-700 mb-1">No. Batch Produksi / Referensi Supplier</label>
+                    <input type="text" x-model="restockForm.refNo" placeholder="PROD-2026-001 / SUP-001" class="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50 font-medium">
                 </div>
             </div>
             <div class="bg-slate-50 p-4 border-t border-slate-200 flex justify-end gap-3">
-                <button @click="showReceiveModal = false" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-300">Batal</button>
-                <button @click="confirmGoodsReceipt()" class="px-5 py-2 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 shadow flex items-center gap-1.5">
-                    <i class="fa-solid fa-check-double"></i> Simpan & Selesaikan Penerimaan
+                <button @click="showRestockModal = false" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-300">Batal</button>
+                <button @click="submitRestock()" class="px-5 py-2 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 shadow">Simpan ke Stok & Kartu Stok</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Catat Selesai Produksi Massal (Sesuai Item Terpilih) -->
+    <div x-show="showBatchProductionModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" x-cloak>
+        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden border border-slate-200">
+            <div class="bg-emerald-800 text-white p-4 flex justify-between items-center">
+                <h3 class="font-bold text-base"><i class="fa-solid fa-clipboard-check mr-2"></i> Catat Hasil Produksi Terpilih ke Stok CK</h3>
+                <button @click="showBatchProductionModal = false" class="text-white hover:text-emerald-200 text-lg font-bold">&times;</button>
+            </div>
+            <div class="p-6 space-y-4 max-h-[75vh] overflow-y-auto text-xs">
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">No. Batch Produksi / Referensi Jadwal Dapur</label>
+                    <input type="text" x-model="batchProductionRef" class="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50 font-bold">
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-2">Daftar Item Sesuai Urutan Prioritas Produksi:</label>
+                    <table class="w-full text-left border-collapse border border-slate-200">
+                        <thead>
+                            <tr class="bg-slate-100 text-slate-600 border-b border-slate-200">
+                                <th class="p-2 text-center w-14">Prioritas</th>
+                                <th class="p-2">Nama Bahan Baku / Olahan</th>
+                                <th class="p-2 text-center">Stok Awal</th>
+                                <th class="p-2 text-center">Jumlah Jadi Diproduksi</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            <template x-for="(bItem, idx) in batchProductionItems" :key="bItem.itemId">
+                                <tr>
+                                    <td class="p-2 text-center font-black text-emerald-700" x-text="'#' + (idx + 1)"></td>
+                                    <td class="p-2 font-bold text-slate-800" x-text="getItemName(bItem.itemId)"></td>
+                                    <td class="p-2 text-center text-slate-600" x-text="getItemStock(bItem.itemId) + ' ' + getItemUnit(bItem.itemId)"></td>
+                                    <td class="p-2 text-center">
+                                        <div class="inline-flex items-center gap-1">
+                                            <input type="number" min="1" x-model.number="bItem.qty" class="w-20 border border-slate-300 rounded-lg p-1.5 text-center font-bold bg-white">
+                                            <span class="text-slate-500 font-semibold" x-text="getItemUnit(bItem.itemId)"></span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="bg-slate-50 p-4 border-t border-slate-200 flex justify-end gap-3">
+                <button @click="showBatchProductionModal = false" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-300">Batal</button>
+                <button @click="submitBatchProduction()" class="px-5 py-2 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 shadow">
+                    <i class="fa-solid fa-check-double mr-1"></i> Simpan Semua Hasil Produksi
                 </button>
             </div>
         </div>
@@ -1277,39 +1475,6 @@
             </template>
             <div class="bg-slate-50 p-4 border-t border-slate-200 flex justify-end">
                 <button @click="showPODetailModal = false" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-300">Tutup</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Restock Gudang CK -->
-    <div x-show="showRestockModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" x-cloak>
-        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200">
-            <div class="bg-emerald-800 text-white p-4 flex justify-between items-center">
-                <h3 class="font-bold text-base"><i class="fa-solid fa-box-archive mr-2"></i> Restock Gudang Central Kitchen</h3>
-                <button @click="showRestockModal = false" class="text-white hover:text-emerald-200 text-lg font-bold">&times;</button>
-            </div>
-            <div class="p-6 space-y-4 text-xs">
-                <div>
-                    <label class="block font-semibold text-slate-700 mb-1">Pilih Bahan Baku</label>
-                    <select x-model="restockForm.itemId" class="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50 font-medium">
-                        <option value="">-- Pilih Bahan Baku --</option>
-                        <template x-for="inv in inventory" :key="inv.id">
-                            <option :value="inv.id" x-text="inv.name + ' (Stok: ' + inv.stock + ' ' + inv.unit + ')'"></option>
-                        </template>
-                    </select>
-                </div>
-                <div>
-                    <label class="block font-semibold text-slate-700 mb-1">Jumlah Masuk (Restock)</label>
-                    <input type="number" min="1" x-model.number="restockForm.qty" class="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50 font-bold">
-                </div>
-                <div>
-                    <label class="block font-semibold text-slate-700 mb-1">No. Referensi Supplier / PO Masuk</label>
-                    <input type="text" x-model="restockForm.refNo" placeholder="SUP-2026-001" class="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50 font-medium">
-                </div>
-            </div>
-            <div class="bg-slate-50 p-4 border-t border-slate-200 flex justify-end gap-3">
-                <button @click="showRestockModal = false" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-300">Batal</button>
-                <button @click="submitRestock()" class="px-5 py-2 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 shadow">Simpan Restock</button>
             </div>
         </div>
     </div>
@@ -1398,13 +1563,18 @@
             <!-- Printable Area -->
             <div id="printable-area" class="p-8 space-y-6 text-slate-800 bg-white">
                 <div class="flex justify-between items-start border-b-2 border-slate-800 pb-4">
-                    <div>
-                        <h2 class="text-2xl font-black tracking-tight text-red-800 uppercase" x-text="ckProfile.name"></h2>
-                        <p class="text-xs text-slate-600 font-semibold" x-text="ckProfile.subtitle"></p>
-                        <p class="text-[10px] text-slate-500" x-text="ckProfile.address + (ckProfile.phone ? ' | Telp: ' + ckProfile.phone : '')"></p>
+                    <div class="flex items-center gap-3">
+                        <template x-if="branding.logoUrl">
+                            <img :src="branding.logoUrl" alt="Logo Surat Jalan" class="w-12 h-12 object-contain rounded-lg border border-slate-200 p-0.5 shrink-0">
+                        </template>
+                        <div>
+                            <h2 class="text-2xl font-black tracking-tight text-red-800 uppercase" x-text="ckProfile.name"></h2>
+                            <p class="text-xs text-slate-600 font-semibold" x-text="ckProfile.subtitle"></p>
+                            <p class="text-[10px] text-slate-500" x-text="ckProfile.address + (ckProfile.phone ? ' | Telp: ' + ckProfile.phone : '')"></p>
+                        </div>
                     </div>
                     <div class="text-right">
-                        <h1 class="text-xl font-bold tracking-wide text-slate-800" x-text="isPrintingChecklist ? 'CHECKLIST GUDANG' : 'SURAT JALAN'"></h1>
+                        <h1 class="text-xl font-bold tracking-wide text-slate-800" x-text="isPrintingProductionPlan ? 'RENCANA PRODUKSI CK' : (isPrintingChecklist ? 'CHECKLIST GUDANG' : 'SURAT JALAN')"></h1>
                         <p class="text-xs font-mono font-bold text-red-600" x-text="selectedSJForPrint ? selectedSJForPrint.id : ''"></p>
                         <p class="text-[10px] text-slate-500" x-text="'Tanggal: ' + (selectedSJForPrint ? formatDateTime(selectedSJForPrint.dispatchTime) : '')"></p>
                     </div>
@@ -1412,17 +1582,17 @@
 
                 <div class="grid grid-cols-2 gap-4 text-xs bg-slate-50 p-4 rounded-xl border border-slate-200">
                     <div>
-                        <p class="text-slate-500 font-semibold">TUJUAN PENGIRIMAN OUTLET:</p>
+                        <p class="text-slate-500 font-semibold" x-text="isPrintingProductionPlan ? 'UNIT PRODUKSI:' : 'TUJUAN PENGIRIMAN OUTLET:'"></p>
                         <p class="font-bold text-slate-800 text-sm" x-text="selectedSJForPrint ? getOutletName(selectedSJForPrint.outletId) : ''"></p>
                         <p class="text-[11px] text-slate-600 mb-1" x-text="selectedSJForPrint ? getOutletAddress(selectedSJForPrint.outletId) : ''"></p>
-                        <p class="text-slate-600 mt-1">Penerima: <span class="font-bold text-slate-800" x-text="selectedSJForPrint ? (selectedSJForPrint.receiverName || 'Manager Outlet') : ''"></span></p>
-                        <p class="text-slate-600">No. Referensi PO: <span class="font-mono font-bold" x-text="selectedSJForPrint ? selectedSJForPrint.poId : ''"></span></p>
+                        <p class="text-slate-600 mt-1" x-show="!isPrintingProductionPlan">Penerima: <span class="font-bold text-slate-800" x-text="selectedSJForPrint ? (selectedSJForPrint.receiverName || 'Manager Outlet') : ''"></span></p>
+                        <p class="text-slate-600">Referensi: <span class="font-mono font-bold" x-text="selectedSJForPrint ? selectedSJForPrint.poId : ''"></span></p>
                     </div>
                     <div>
-                        <p class="text-slate-500 font-semibold">INFORMASI PENGIRIM & KURIR:</p>
-                        <p class="text-slate-700">Pengirim CK: <span class="font-bold text-slate-800" x-text="selectedSJForPrint ? (selectedSJForPrint.senderName || 'Staf Gudang CK') : ''"></span></p>
-                        <p class="text-slate-700">Kurir: <span class="font-bold" x-text="selectedSJForPrint ? selectedSJForPrint.courierType + ' (' + selectedSJForPrint.driverName + ')' : ''"></span></p>
-                        <p class="text-slate-700">Plat / Resi: <span class="font-mono font-bold" x-text="selectedSJForPrint ? selectedSJForPrint.plateOrResi : ''"></span></p>
+                        <p class="text-slate-500 font-semibold" x-text="isPrintingProductionPlan ? 'INFORMASI JADWAL PRODUKSI:' : 'INFORMASI PENGIRIM & KURIR:'"></p>
+                        <p class="text-slate-700" x-text="(isPrintingProductionPlan ? 'Kepala Dapur / PIC: ' : 'Pengirim CK: ') + (selectedSJForPrint ? (selectedSJForPrint.senderName || 'Staf Gudang CK') : '')"></p>
+                        <p class="text-slate-700" x-show="!isPrintingProductionPlan">Kurir: <span class="font-bold" x-text="selectedSJForPrint ? selectedSJForPrint.courierType + ' (' + selectedSJForPrint.driverName + ')' : ''"></span></p>
+                        <p class="text-slate-700" x-text="(isPrintingProductionPlan ? 'Keterangan: ' : 'Plat / Resi: ') + (selectedSJForPrint ? selectedSJForPrint.plateOrResi : '')"></p>
                     </div>
                 </div>
 
@@ -1430,16 +1600,16 @@
                     <table class="w-full text-left text-xs border-collapse border border-slate-300">
                         <thead>
                             <tr class="bg-slate-100 text-slate-700 border-b border-slate-300">
-                                <th class="p-2 border-r border-slate-300 text-center w-12">No</th>
+                                <th class="p-2 border-r border-slate-300 text-center w-16" x-text="isPrintingProductionPlan ? 'Prioritas' : 'No'"></th>
                                 <th class="p-2 border-r border-slate-300">Nama Bahan Baku / Item</th>
-                                <th class="p-2 text-center w-32">Jumlah Dikirim</th>
+                                <th class="p-2 text-center w-40" x-text="isPrintingProductionPlan ? 'Target Produksi' : 'Jumlah Dikirim'"></th>
                             </tr>
                         </thead>
                         <tbody>
                             <template x-for="(item, idx) in (selectedSJForPrint ? selectedSJForPrint.items : [])" :key="item.itemId">
                                 <tr class="border-b border-slate-200">
-                                    <td class="p-2 border-r border-slate-300 text-center" x-text="idx + 1"></td>
-                                    <td class="p-2 border-r border-slate-300 font-semibold" x-text="getItemName(item.itemId)"></td>
+                                    <td class="p-2 border-r border-slate-300 text-center font-bold" x-text="isPrintingProductionPlan ? ('#' + (idx + 1)) : (idx + 1)"></td>
+                                    <td class="p-2 border-r border-slate-300 font-semibold" x-text="getItemName(item.itemId) + (item.note ? ' (' + item.note + ')' : '')"></td>
                                     <td class="p-2 text-center font-bold" x-text="item.qtyShipped + ' ' + getItemUnit(item.itemId)"></td>
                                 </tr>
                             </template>
@@ -1708,6 +1878,17 @@
                     phone: '021-8899-7766'
                 },
 
+                branding: {
+                    logoUrl: '',
+                    bannerUrl: '',
+                    bannerOpacity: 0.78
+                },
+                brandingForm: {
+                    logoUrl: '',
+                    bannerUrl: '',
+                    bannerOpacity: 0.78
+                },
+
                 outlets: [
                     { id: 'OUT-01', name: 'Outlet Samuda - Jaksel (Kemang)', address: 'Jl. Kemang Raya No. 45, Jakarta Selatan', phone: '0812-1111-2222' },
                     { id: 'OUT-02', name: 'Outlet Samuda - Bandung (Dago)', address: 'Jl. Ir. H. Juanda No. 112, Bandung', phone: '0812-3333-4444' },
@@ -1742,6 +1923,12 @@
 
                 restoreSessionState() {
                     try {
+                        const savedBranding = localStorage.getItem('scm_samuda_branding');
+                        if (savedBranding) {
+                            const parsedBranding = JSON.parse(savedBranding);
+                            this.branding = { ...this.branding, ...parsedBranding };
+                            this.brandingForm = { ...this.branding };
+                        }
                         const savedPins = localStorage.getItem('scm_samuda_access_pins');
                         if (savedPins) {
                             const parsedPins = JSON.parse(savedPins);
@@ -2062,6 +2249,17 @@
                             } catch (e) {}
                         }
                     }, onErr);
+
+                    fb.onSnapshot(this.getDocRef('settings', 'branding'), (docSnap) => {
+                        if (docSnap.exists()) {
+                            const cloudBranding = docSnap.data();
+                            this.branding = { ...this.branding, ...cloudBranding };
+                            this.brandingForm = { ...this.branding };
+                            try {
+                                localStorage.setItem('scm_samuda_branding', JSON.stringify(this.branding));
+                            } catch (e) {}
+                        }
+                    }, onErr);
                 },
 
                 // Modal Visibility Flags
@@ -2070,6 +2268,7 @@
                 showReceiveModal: false,
                 showPODetailModal: false,
                 showRestockModal: false,
+                showBatchProductionModal: false,
                 showAddItemModal: false,
                 showEditItemModal: false,
                 showCategoryModal: false,
@@ -2078,13 +2277,17 @@
                 showAdminEditPOModal: false,
                 showAdminEditSJModal: false,
 
-                // Resto PO Form State
+                // Production Planning & Priority Selection State
+                selectedProductionIds: [],
+                customProductionQtys: {},
+                batchProductionRef: '',
+                batchProductionItems: [],
+                editingRestoPOId: null,
                 newPO: {
                     targetDate: new Date(Date.now() + 86400000).toISOString().split('T')[0],
                     items: [{ itemId: '', qty: 1 }],
                     notes: ''
                 },
-                editingRestoPOId: null,
 
                 // Central Kitchen Process & Dispatch Forms
                 activePOForProcess: null,
@@ -2120,7 +2323,7 @@
                 // Print Modal States
                 selectedSJForPrint: null,
                 isPrintingChecklist: false,
-
+                isPrintingProductionPlan: false,
                 // Super Admin Forms
                 outletForm: { id: '', name: '', address: '', phone: '' },
                 isEditingOutlet: false,
@@ -2152,6 +2355,81 @@
                 },
                 get pendingPOCount() {
                     return (this.pos || []).filter(p => p.status === 'PENDING').length;
+                },
+                get lowStockItems() {
+                    return (this.inventory || [])
+                        .filter(item => Number(item.stock) <= this.getItemMinBuffer(item))
+                        .sort((a, b) => Number(a.stock) - Number(b.stock));
+                },
+                get orderedLowStockItems() {
+                    const items = this.lowStockItems;
+                    const selectedSet = new Set(this.selectedProductionIds || []);
+                    const selected = (this.selectedProductionIds || [])
+                        .map(id => items.find(i => i.id === id))
+                        .filter(Boolean);
+                    const unselected = items.filter(i => !selectedSet.has(i.id));
+                    return [...selected, ...unselected];
+                },
+                isItemSelectedForProduction(itemId) {
+                    return (this.selectedProductionIds || []).includes(itemId);
+                },
+                getProductionPriorityIndex(itemId) {
+                    return (this.selectedProductionIds || []).indexOf(itemId);
+                },
+                toggleProductionItem(itemId) {
+                    const idx = this.selectedProductionIds.indexOf(itemId);
+                    if (idx === -1) {
+                        this.selectedProductionIds.push(itemId);
+                        const item = this.inventory.find(i => i.id === itemId);
+                        if (item && !this.customProductionQtys[itemId]) {
+                            this.customProductionQtys[itemId] = this.getRecommendedProductionQty(item);
+                        }
+                    } else {
+                        this.selectedProductionIds.splice(idx, 1);
+                    }
+                },
+                selectAllProductionItems() {
+                    this.selectedProductionIds = this.lowStockItems.map(i => {
+                        if (!this.customProductionQtys[i.id]) {
+                            this.customProductionQtys[i.id] = this.getRecommendedProductionQty(i);
+                        }
+                        return i.id;
+                    });
+                    this.notify('Semua ' + this.selectedProductionIds.length + ' item dipilih ke dalam rencana produksi.');
+                },
+                clearProductionSelection() {
+                    this.selectedProductionIds = [];
+                },
+                moveProductionPriority(itemId, direction) {
+                    const idx = this.selectedProductionIds.indexOf(itemId);
+                    if (idx === -1) return;
+                    const newIdx = idx + direction;
+                    if (newIdx < 0 || newIdx >= this.selectedProductionIds.length) return;
+                    const copy = [...this.selectedProductionIds];
+                    const [moved] = copy.splice(idx, 1);
+                    copy.splice(newIdx, 0, moved);
+                    this.selectedProductionIds = copy;
+                },
+                getCustomProductionQty(item) {
+                    if (!item) return 1;
+                    const custom = Number(this.customProductionQtys[item.id]);
+                    if (!isNaN(custom) && custom > 0) return custom;
+                    return this.getRecommendedProductionQty(item);
+                },
+                setCustomProductionQty(itemId, val) {
+                    const num = Math.max(1, Number(val) || 1);
+                    this.customProductionQtys[itemId] = num;
+                },
+                getItemMinBuffer(item) {
+                    if (!item) return 0;
+                    const val = item.minBuffer !== undefined ? item.minBuffer : item.minStock;
+                    return Number(val) || 0;
+                },
+                getRecommendedProductionQty(item) {
+                    const stock = Math.max(0, Number(item.stock) || 0);
+                    const buffer = this.getItemMinBuffer(item);
+                    const targetSafeStock = Math.max(buffer * 2, buffer + 10);
+                    return Math.max(1, targetSafeStock - stock);
                 },
                 get filteredStockCardLogs() {
                     const logs = this.stockCardLogs || [];
@@ -2426,6 +2704,109 @@
                 closePrintModal() {
                     this.showPrintSJModal = false;
                     this.isPrintingChecklist = false;
+                    this.isPrintingProductionPlan = false;
+                },
+                printProductionReminderList() {
+                    const targetItems = this.selectedProductionIds.length > 0
+                        ? this.selectedProductionIds.map(id => this.lowStockItems.find(i => i.id === id)).filter(Boolean)
+                        : this.lowStockItems;
+
+                    if (targetItems.length === 0) {
+                        this.notify('Semua stok aman di atas buffer.');
+                        return;
+                    }
+                    this.isPrintingChecklist = false;
+                    this.isPrintingProductionPlan = true;
+                    const todayCode = new Date().toISOString().split('T')[0].replace(/-/g, '');
+                    this.selectedSJForPrint = {
+                        id: 'PROD-PLAN-' + todayCode,
+                        poId: this.selectedProductionIds.length > 0 ? 'PRIORITAS TERPILIH (' + targetItems.length + ' ITEM)' : 'SEMUA STOK DI BAWAH BUFFER',
+                        outletId: 'Central Kitchen Produksi',
+                        courierType: 'Internal Produksi Dapur',
+                        driverName: 'Tim Produksi CK',
+                        plateOrResi: 'Kerjakan Sesuai Nomor Urutan Prioritas (#1 dst.)',
+                        senderName: 'Admin / Kepala Central Kitchen',
+                        receiverName: 'Tim Gudang CK',
+                        dispatchTime: new Date().toISOString(),
+                        items: targetItems.map(item => ({
+                            itemId: item.id,
+                            qtyShipped: this.getCustomProductionQty(item),
+                            note: 'Sisa: ' + item.stock + ' / Buffer: ' + this.getItemMinBuffer(item)
+                        }))
+                    };
+                    this.showPrintSJModal = true;
+                },
+                openQuickProductionModal(item) {
+                    if (!item) return;
+                    const recQty = this.getCustomProductionQty(item);
+                    const dateStr = new Date().toISOString().split('T')[0].replace(/-/g, '');
+                    this.restockForm = {
+                        itemId: item.id,
+                        qty: recQty,
+                        refNo: 'PROD-' + dateStr + '-' + Math.floor(100 + Math.random() * 900)
+                    };
+                    this.showRestockModal = true;
+                },
+                openBatchProductionModal() {
+                    if (this.selectedProductionIds.length === 0) {
+                        this.notify('Centang minimal 1 item terlebih dahulu untuk mencatat hasil produksi!');
+                        return;
+                    }
+                    const dateStr = new Date().toISOString().split('T')[0].replace(/-/g, '');
+                    this.batchProductionRef = 'PROD-BATCH-' + dateStr + '-' + Math.floor(100 + Math.random() * 900);
+                    this.batchProductionItems = this.selectedProductionIds
+                        .map(id => this.inventory.find(i => i.id === id))
+                        .filter(Boolean)
+                        .map(item => ({
+                            itemId: item.id,
+                            qty: this.getCustomProductionQty(item)
+                        }));
+                    this.showBatchProductionModal = true;
+                },
+                async submitBatchProduction() {
+                    if (!this.batchProductionItems || this.batchProductionItems.length === 0) return;
+                    const fb = window.firebaseModules;
+                    const refNo = (this.batchProductionRef && this.batchProductionRef.trim()) ? this.batchProductionRef.trim() : 'Produksi Batch CK';
+                    let processedCount = 0;
+
+                    for (const bItem of this.batchProductionItems) {
+                        const qty = Number(bItem.qty);
+                        if (!bItem.itemId || isNaN(qty) || qty <= 0) continue;
+
+                        const item = this.inventory.find(i => i.id === bItem.itemId);
+                        if (!item) continue;
+
+                        const newStock = (Number(item.stock) || 0) + qty;
+                        item.stock = newStock;
+                        processedCount++;
+
+                        const logId = 'LOG-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+                        const logEntry = {
+                            id: logId,
+                            timestamp: new Date().toISOString(),
+                            itemId: item.id,
+                            itemName: item.name,
+                            type: 'IN_PRODUCTION',
+                            qty: qty,
+                            balanceAfter: newStock,
+                            unit: item.unit,
+                            refNo: refNo
+                        };
+                        this.stockCardLogs.unshift(logEntry);
+
+                        if (this.isCloudConnected && this.db) {
+                            await fb.updateDoc(this.getDocRef('inventory', item.id), {
+                                stock: newStock
+                            }).catch(e => this.handleFirestorePermissionError(e));
+
+                            await fb.setDoc(this.getDocRef('stockCardLogs', logId), logEntry).catch(e => this.handleFirestorePermissionError(e));
+                        }
+                    }
+
+                    this.saveLocalBackup();
+                    this.selectedProductionIds = [];
+                    this.showBatchProductionModal = false;
+                    this.notify(processedCount + ' item hasil produksi berhasil ditambahkan ke stok & Kartu Stok!');
                 },
                 async confirmProcessPOAndDispatch() {
                     if (!this.activePOForProcess || this.isDispatchingPO) return;
@@ -2527,7 +2908,12 @@
 
                         this.showProcessPOModal = false;
                         this.activePOForProcess = null;
-                        this.notify('Surat Jalan ' + sjId + ' diterbitkan & stok Central Kitchen berhasil dipotong!');
+                        const lowCountAfterDispatch = this.lowStockItems.length;
+                        if (lowCountAfterDispatch > 0) {
+                            this.notify('Surat Jalan ' + sjId + ' terbit! PERINGATAN: ' + lowCountAfterDispatch + ' item kini di bawah buffer & perlu produksi!');
+                        } else {
+                            this.notify('Surat Jalan ' + sjId + ' diterbitkan & stok Central Kitchen berhasil dipotong!');
+                        }
                     } catch (err) {
                         console.error('Error dispatching PO:', err);
                         this.handleFirestorePermissionError(err);
@@ -2817,6 +3203,7 @@
 
                 openPrintSJModal(sj) {
                     this.isPrintingChecklist = false;
+                    this.isPrintingProductionPlan = false;
                     this.selectedSJForPrint = sj;
                     this.showPrintSJModal = true;
                 },
@@ -2825,6 +3212,88 @@
                 },
 
                 // ================= SUPER ADMIN METHODS =================
+                handleBrandingImageUpload(event, targetType) {
+                    const file = event.target.files && event.target.files[0];
+                    if (!file) return;
+
+                    if (!file.type.startsWith('image/')) {
+                        this.notify('File yang dipilih harus berupa gambar (PNG/JPG/WEBP)!');
+                        return;
+                    }
+
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const img = new Image();
+                        img.onload = () => {
+                            const canvas = document.createElement('canvas');
+                            const maxWidth = targetType === 'logo' ? 280 : 1200;
+                            const maxHeight = targetType === 'logo' ? 280 : 420;
+                            let width = img.width;
+                            let height = img.height;
+
+                            if (width > maxWidth) {
+                                height = Math.round((height * maxWidth) / width);
+                                width = maxWidth;
+                            }
+                            if (height > maxHeight) {
+                                width = Math.round((width * maxHeight) / height);
+                                height = maxHeight;
+                            }
+
+                            canvas.width = width;
+                            canvas.height = height;
+                            const ctx = canvas.getContext('2d');
+                            ctx.drawImage(img, 0, 0, width, height);
+
+                            const compressedDataUrl = targetType === 'logo'
+                                ? canvas.toDataURL('image/png')
+                                : canvas.toDataURL('image/jpeg', 0.78);
+
+                            if (targetType === 'logo') {
+                                this.brandingForm.logoUrl = compressedDataUrl;
+                                this.notify('Logo siap disimpan! Klik "Simpan Logo & Banner" untuk menerapkan.');
+                            } else {
+                                this.brandingForm.bannerUrl = compressedDataUrl;
+                                this.notify('Banner siap disimpan! Klik "Simpan Logo & Banner" untuk menerapkan.');
+                            }
+                        };
+                        img.src = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                    event.target.value = '';
+                },
+
+                resetLogoBranding() {
+                    this.brandingForm.logoUrl = '';
+                    this.notify('Logo dikembalikan ke ikon default. Klik "Simpan Logo & Banner" untuk menyimpan.');
+                },
+
+                resetBannerBranding() {
+                    this.brandingForm.bannerUrl = '';
+                    this.notify('Banner dikosongkan. Klik "Simpan Logo & Banner" untuk menyimpan.');
+                },
+
+                async saveBrandingSettings() {
+                    const payload = {
+                        logoUrl: (this.brandingForm.logoUrl || '').trim(),
+                        bannerUrl: (this.brandingForm.bannerUrl || '').trim(),
+                        bannerOpacity: Number(this.brandingForm.bannerOpacity) || 0.78
+                    };
+
+                    this.branding = { ...payload };
+                    try {
+                        localStorage.setItem('scm_samuda_branding', JSON.stringify(this.branding));
+                    } catch (e) {}
+
+                    const fb = window.firebaseModules;
+                    if (this.isCloudConnected && this.db && fb) {
+                        await fb.setDoc(this.getDocRef('settings', 'branding'), this.branding)
+                            .catch(e => this.handleFirestorePermissionError(e));
+                    }
+
+                    this.notify('Logo & Banner berhasil disimpan dan diperbarui di seluruh halaman!');
+                },
+
                 async saveCKProfile() {
                     if (!this.ckProfileForm.name.trim()) {
                         this.notify('Nama Central Kitchen tidak boleh kosong!');
