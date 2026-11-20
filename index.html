@@ -4,14 +4,46 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Warung Sambal Samuda Nusantara - SCM & Surat Jalan</title>
+    <!-- Google Fonts: Plus Jakarta Sans & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+                        mono: ['"JetBrains Mono"', 'monospace'],
+                    },
+                    boxShadow: {
+                        'soft': '0 2px 15px -3px rgba(15, 23, 42, 0.04), 0 4px 6px -4px rgba(15, 23, 42, 0.03)',
+                        'card': '0 10px 30px -5px rgba(15, 23, 42, 0.06)',
+                        'glow-red': '0 10px 25px -5px rgba(185, 28, 28, 0.28)',
+                    }
+                }
+            }
+        }
+    </script>
     <!-- Alpine.js -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         [x-cloak] { display: none !important; }
+        body {
+            font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+            background-image: radial-gradient(#cbd5e1 0.65px, transparent 0.65px);
+            background-size: 20px 20px;
+        }
+        /* Custom Modern Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
         @media print {
             @page {
                 size: A4 portrait;
@@ -21,6 +53,7 @@
                 height: auto !important;
                 overflow: visible !important;
                 background: white !important;
+                background-image: none !important;
                 margin: 0 !important;
                 padding: 0 !important;
             }
@@ -78,97 +111,102 @@
         }
     </style>
 </head>
-<body class="bg-slate-100 text-slate-800 font-sans antialiased" x-data="scmApp()" x-init="initFirebaseAndData()">
+<body class="bg-slate-50/95 text-slate-800 font-sans antialiased selection:bg-red-700 selection:text-white" x-data="scmApp()" x-init="initFirebaseAndData()">
 
     <!-- ================= ROLE-BASED PIN LOGIN GATE ================= -->
-    <div x-show="!isAuthenticated" class="min-h-screen bg-gradient-to-br from-red-950 via-red-900 to-slate-900 flex items-center justify-center p-4 no-print" x-cloak>
-        <div class="max-w-md w-full bg-white rounded-3xl shadow-2xl overflow-hidden border border-red-200/30">
+    <div x-show="!isAuthenticated" class="min-h-screen bg-slate-950 flex items-center justify-center p-4 sm:p-6 no-print relative overflow-hidden" x-cloak>
+        <!-- Ambient Background Orbs -->
+        <div class="absolute -top-32 -left-32 w-96 h-96 bg-red-700/25 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute -bottom-32 -right-32 w-96 h-96 bg-amber-500/15 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div class="max-w-md w-full bg-white rounded-[28px] shadow-2xl overflow-hidden border border-white/15 relative z-10">
             <!-- Header Brand (Mendukung Custom Banner & Custom Logo) -->
-            <div class="bg-red-800 text-white p-6 text-center relative overflow-hidden">
+            <div class="bg-gradient-to-br from-red-800 via-red-900 to-slate-950 text-white p-7 text-center relative overflow-hidden">
                 <template x-if="branding.bannerUrl">
                     <div class="absolute inset-0 z-0">
                         <img :src="branding.bannerUrl" @error="branding.bannerUrl = ''" alt="Banner Brand" class="w-full h-full object-cover">
-                        <div class="absolute inset-0 bg-gradient-to-b from-slate-950/70 via-red-950/75 to-red-900/90" :style="'opacity:' + (branding.bannerOpacity || 0.78)"></div>
+                        <div class="absolute inset-0 bg-gradient-to-b from-slate-950/75 via-red-950/80 to-slate-950/95" :style="'opacity:' + (branding.bannerOpacity || 0.78)"></div>
                     </div>
                 </template>
                 <div class="relative z-10">
-                    <div class="w-16 h-16 bg-white text-red-800 rounded-2xl flex items-center justify-center text-3xl font-black mx-auto mb-3 shadow-lg overflow-hidden border-2 border-white/80">
+                    <div class="w-16 h-16 bg-white text-red-800 rounded-2xl flex items-center justify-center text-3xl font-extrabold mx-auto mb-3.5 shadow-xl overflow-hidden ring-4 ring-white/15">
                         <template x-if="branding.logoUrl">
-                            <img :src="branding.logoUrl" @error="branding.logoUrl = ''" alt="Logo Brand" class="w-full h-full object-contain p-1">
+                            <img :src="branding.logoUrl" @error="branding.logoUrl = ''" alt="Logo Brand" class="w-full h-full object-contain p-1.5">
                         </template>
                         <template x-if="!branding.logoUrl">
                             <i class="fa-solid fa-pepper-hot"></i>
                         </template>
                     </div>
-                    <h1 class="font-black text-xl tracking-tight drop-shadow-sm" x-text="ckProfile.name || 'Warung Sambal Samuda Nusantara'"></h1>
-                    <p class="text-xs text-red-100 mt-1 drop-shadow-sm">Sistem Supply Chain, PO & Surat Jalan Terpadu</p>
-                    <div class="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold backdrop-blur-sm"
-                         :class="isCloudConnected ? 'bg-emerald-950/75 text-emerald-300 border border-emerald-500/40' : 'bg-amber-950/75 text-amber-300 border border-amber-500/40'">
+                    <span class="inline-block text-[10px] font-bold uppercase tracking-[0.2em] text-amber-300/90 mb-1">Enterprise Supply Chain</span>
+                    <h1 class="font-extrabold text-xl tracking-tight drop-shadow-sm" x-text="ckProfile.name || 'Warung Sambal Samuda Nusantara'"></h1>
+                    <p class="text-xs text-slate-300 mt-1">Sistem Manajemen PO, Inventori & Surat Jalan Terpadu</p>
+                    <div class="mt-3.5 inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-[11px] font-semibold backdrop-blur-md"
+                         :class="isCloudConnected ? 'bg-emerald-950/70 text-emerald-300 border border-emerald-500/30' : 'bg-amber-950/70 text-amber-300 border border-amber-500/30'">
                         <span class="w-2 h-2 rounded-full" :class="isCloudConnected ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'"></span>
-                        <span x-text="isCloudConnected ? 'Firebase Cloud Ready' : 'Menghubungkan Cloud / Mode Lokal'"></span>
+                        <span x-text="isCloudConnected ? 'Cloud Terhubung • Sync Aktif' : 'Menghubungkan Cloud / Mode Lokal'"></span>
                     </div>
                 </div>
             </div>
 
             <!-- Form Login -->
-            <form @submit.prevent="handleLogin()" class="p-6 space-y-5">
+            <form @submit.prevent="handleLogin()" class="p-6 sm:p-7 space-y-5 bg-white">
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">1. Pilih Akses Bagian / Divisi</label>
+                    <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2.5">1. Pilih Akses Bagian / Divisi</label>
                     <div class="grid grid-cols-1 gap-2.5">
                         <button type="button" @click="loginRole = 'resto'; loginError = ''"
-                                :class="loginRole === 'resto' ? 'border-red-600 bg-red-50/80 ring-2 ring-red-600/20' : 'border-slate-200 hover:bg-slate-50'"
-                                class="flex items-center justify-between p-3.5 rounded-2xl border-2 text-left transition">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-xl flex items-center justify-center text-base"
-                                     :class="loginRole === 'resto' ? 'bg-red-600 text-white' : 'bg-slate-100 text-slate-600'">
+                                :class="loginRole === 'resto' ? 'border-red-600 bg-red-50/70 shadow-sm ring-2 ring-red-600/15' : 'border-slate-200/90 hover:border-slate-300 hover:bg-slate-50/80'"
+                                class="flex items-center justify-between p-3.5 rounded-2xl border transition-all duration-200 text-left group">
+                            <div class="flex items-center gap-3.5">
+                                <div class="w-10 h-10 rounded-xl flex items-center justify-center text-base transition-colors"
+                                     :class="loginRole === 'resto' ? 'bg-red-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 group-hover:bg-slate-200/70'">
                                     <i class="fa-solid fa-store"></i>
                                 </div>
                                 <div>
                                     <p class="font-bold text-sm text-slate-800">Admin Resto (Outlet)</p>
-                                    <p class="text-[11px] text-slate-500">Hanya akses PO Outlet & Terima Barang</p>
+                                    <p class="text-[11px] text-slate-500">Akses PO Outlet & Konfirmasi Terima Barang</p>
                                 </div>
                             </div>
-                            <i class="fa-solid fa-circle-check text-lg" :class="loginRole === 'resto' ? 'text-red-600' : 'text-slate-200'"></i>
+                            <i class="fa-solid fa-circle-check text-lg transition-colors" :class="loginRole === 'resto' ? 'text-red-600' : 'text-slate-200'"></i>
                         </button>
 
                         <button type="button" @click="loginRole = 'ck'; loginError = ''"
-                                :class="loginRole === 'ck' ? 'border-red-600 bg-red-50/80 ring-2 ring-red-600/20' : 'border-slate-200 hover:bg-slate-50'"
-                                class="flex items-center justify-between p-3.5 rounded-2xl border-2 text-left transition">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-xl flex items-center justify-center text-base"
-                                     :class="loginRole === 'ck' ? 'bg-red-600 text-white' : 'bg-slate-100 text-slate-600'">
+                                :class="loginRole === 'ck' ? 'border-red-600 bg-red-50/70 shadow-sm ring-2 ring-red-600/15' : 'border-slate-200/90 hover:border-slate-300 hover:bg-slate-50/80'"
+                                class="flex items-center justify-between p-3.5 rounded-2xl border transition-all duration-200 text-left group">
+                            <div class="flex items-center gap-3.5">
+                                <div class="w-10 h-10 rounded-xl flex items-center justify-center text-base transition-colors"
+                                     :class="loginRole === 'ck' ? 'bg-red-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 group-hover:bg-slate-200/70'">
                                     <i class="fa-solid fa-industry"></i>
                                 </div>
                                 <div>
                                     <p class="font-bold text-sm text-slate-800">Central Kitchen & Audit</p>
-                                    <p class="text-[11px] text-slate-500">Akses Gudang CK, Surat Jalan & Audit Laporan</p>
+                                    <p class="text-[11px] text-slate-500">Produksi, Stok Gudang, Surat Jalan & Laporan</p>
                                 </div>
                             </div>
-                            <i class="fa-solid fa-circle-check text-lg" :class="loginRole === 'ck' ? 'text-red-600' : 'text-slate-200'"></i>
+                            <i class="fa-solid fa-circle-check text-lg transition-colors" :class="loginRole === 'ck' ? 'text-red-600' : 'text-slate-200'"></i>
                         </button>
 
                         <button type="button" @click="loginRole = 'superadmin'; loginError = ''"
-                                :class="loginRole === 'superadmin' ? 'border-amber-500 bg-amber-50/80 ring-2 ring-amber-500/20' : 'border-slate-200 hover:bg-slate-50'"
-                                class="flex items-center justify-between p-3.5 rounded-2xl border-2 text-left transition">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-xl flex items-center justify-center text-base"
-                                     :class="loginRole === 'superadmin' ? 'bg-amber-500 text-slate-950' : 'bg-slate-100 text-slate-600'">
+                                :class="loginRole === 'superadmin' ? 'border-amber-500 bg-amber-50/70 shadow-sm ring-2 ring-amber-500/20' : 'border-slate-200/90 hover:border-slate-300 hover:bg-slate-50/80'"
+                                class="flex items-center justify-between p-3.5 rounded-2xl border transition-all duration-200 text-left group">
+                            <div class="flex items-center gap-3.5">
+                                <div class="w-10 h-10 rounded-xl flex items-center justify-center text-base transition-colors"
+                                     :class="loginRole === 'superadmin' ? 'bg-amber-500 text-slate-950 shadow-sm' : 'bg-slate-100 text-slate-600 group-hover:bg-slate-200/70'">
                                     <i class="fa-solid fa-crown"></i>
                                 </div>
                                 <div>
                                     <p class="font-bold text-sm text-slate-800">Super Admin (Semua Akses)</p>
-                                    <p class="text-[11px] text-slate-500">Akses penuh seluruh divisi, master & pengaturan PIN</p>
+                                    <p class="text-[11px] text-slate-500">Kendali penuh seluruh divisi, master & PIN</p>
                                 </div>
                             </div>
-                            <i class="fa-solid fa-circle-check text-lg" :class="loginRole === 'superadmin' ? 'text-amber-500' : 'text-slate-200'"></i>
+                            <i class="fa-solid fa-circle-check text-lg transition-colors" :class="loginRole === 'superadmin' ? 'text-amber-500' : 'text-slate-200'"></i>
                         </button>
                     </div>
                 </div>
 
                 <!-- Pilihan Outlet Khusus Login Resto -->
-                <div x-show="loginRole === 'resto'" x-transition class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
-                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Pilih Cabang Outlet Resto Anda:</label>
-                    <select x-model="loginOutletId" class="w-full border border-slate-300 rounded-xl p-2.5 bg-white text-xs font-bold text-slate-800 focus:ring-2 focus:ring-red-500">
+                <div x-show="loginRole === 'resto'" x-transition class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80">
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Pilih Cabang Outlet Resto:</label>
+                    <select x-model="loginOutletId" class="w-full border border-slate-300 rounded-xl p-2.5 bg-white text-xs font-bold text-slate-800 focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none">
                         <template x-for="o in outlets" :key="o.id">
                             <option :value="o.id" x-text="o.name"></option>
                         </template>
@@ -178,133 +216,144 @@
                 <!-- Input PIN -->
                 <div>
                     <div class="flex justify-between items-center mb-1.5">
-                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">2. Masukkan PIN Akses</label>
-                        <button type="button" @click="showLoginPin = !showLoginPin" class="text-[11px] font-semibold text-slate-500 hover:text-red-700">
-                            <i class="fa-solid" :class="showLoginPin ? 'fa-eye-slash' : 'fa-eye'"></i>
+                        <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider">2. Masukkan PIN Akses</label>
+                        <button type="button" @click="showLoginPin = !showLoginPin" class="text-[11px] font-semibold text-slate-500 hover:text-red-700 transition">
+                            <i class="fa-solid mr-1" :class="showLoginPin ? 'fa-eye-slash' : 'fa-eye'"></i>
                             <span x-text="showLoginPin ? 'Sembunyikan' : 'Lihat PIN'"></span>
                         </button>
                     </div>
                     <div class="relative">
-                        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
-                            <i class="fa-solid fa-lock"></i>
+                        <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400">
+                            <i class="fa-solid fa-shield-halved"></i>
                         </span>
                         <input :type="showLoginPin ? 'text' : 'password'"
                                x-model="loginPinInput"
                                inputmode="numeric"
-                               placeholder="Masukkan PIN..."
-                               class="w-full pl-10 pr-4 py-3 border-2 border-slate-200 rounded-2xl text-center font-mono text-lg font-black tracking-[0.35em] focus:border-red-600 focus:outline-none bg-slate-50">
+                               placeholder="••••"
+                               class="w-full pl-11 pr-4 py-3 border border-slate-300 rounded-2xl text-center font-mono text-lg font-extrabold tracking-[0.4em] focus:border-red-600 focus:ring-4 focus:ring-red-600/10 focus:outline-none bg-slate-50/70 transition">
                     </div>
-                    <p x-show="loginError" x-text="loginError" class="mt-2 text-xs font-bold text-red-600 bg-red-50 border border-red-200 rounded-xl px-3 py-2 text-center"></p>
+                    <p x-show="loginError" x-text="loginError" class="mt-2.5 text-xs font-semibold text-red-700 bg-red-50 border border-red-200 rounded-xl px-3.5 py-2 text-center"></p>
                 </div>
 
-                <button type="submit" class="w-full py-3.5 bg-red-700 hover:bg-red-800 text-white rounded-2xl font-bold text-sm shadow-lg shadow-red-900/20 transition flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-right-to-bracket"></i> Masuk ke Sistem SCM
+                <button type="submit" class="w-full py-3.5 bg-gradient-to-r from-red-700 to-red-800 hover:from-red-800 hover:to-red-900 text-white rounded-2xl font-bold text-sm shadow-glow-red transition-all duration-200 flex items-center justify-center gap-2 active:scale-[0.99]">
+                    <i class="fa-solid fa-right-to-bracket"></i> Masuk ke Workspace SCM
                 </button>
 
-                <div class="text-center pt-1">
-                    <p class="text-[11px] text-slate-400">PIN Default: Resto (<span class="font-mono font-bold text-slate-600">1111</span>) &bull; CK (<span class="font-mono font-bold text-slate-600">2222</span>) &bull; Super Admin (<span class="font-mono font-bold text-slate-600">9999</span>)</p>
+                <div class="text-center pt-1 border-t border-slate-100">
+                    <p class="text-[11px] text-slate-400">PIN Default: Resto (<span class="font-mono font-bold text-slate-600">1111</span>) &bull; CK (<span class="font-mono font-bold text-slate-600">2222</span>) &bull; Admin (<span class="font-mono font-bold text-slate-600">9999</span>)</p>
                 </div>
             </form>
         </div>
     </div>
 
     <!-- ================= MAIN AUTHENTICATED APPLICATION ================= -->
-    <div x-show="isAuthenticated" x-cloak>
-        <!-- TOP BAR / ROLE SWITCHER (FILTERED BY LOGIN ROLE) -->
-        <header class="bg-red-800 text-white shadow-md sticky top-0 z-50 no-print relative overflow-hidden">
+    <div x-show="isAuthenticated" x-cloak class="min-h-screen flex flex-col">
+        <!-- MODERN GLASSMORPHIC STICKY NAVBAR -->
+        <header class="bg-slate-900/95 backdrop-blur-md text-white shadow-lg border-b border-white/10 sticky top-0 z-50 no-print relative overflow-hidden">
             <template x-if="branding.bannerUrl">
                 <div class="absolute inset-0 z-0 pointer-events-none">
                     <img :src="branding.bannerUrl" @error="branding.bannerUrl = ''" alt="Header Banner" class="w-full h-full object-cover">
-                    <div class="absolute inset-0 bg-gradient-to-r from-red-950/90 via-red-900/80 to-slate-950/85" :style="'opacity:' + (branding.bannerOpacity || 0.78)"></div>
+                    <div class="absolute inset-0 bg-gradient-to-r from-slate-950/95 via-red-950/85 to-slate-950/90" :style="'opacity:' + (branding.bannerOpacity || 0.82)"></div>
                 </div>
             </template>
-            <div class="max-w-7xl mx-auto px-4 py-3 flex flex-col md:flex-row justify-between items-center gap-3 relative z-10">
-                <div class="flex items-center space-x-3">
-                    <div class="bg-white text-red-800 w-11 h-11 rounded-xl font-black text-xl shadow flex items-center justify-center overflow-hidden shrink-0 border border-white/60">
-                        <template x-if="branding.logoUrl">
-                            <img :src="branding.logoUrl" @error="branding.logoUrl = ''" alt="Logo" class="w-full h-full object-contain p-0.5">
-                        </template>
-                        <template x-if="!branding.logoUrl">
-                            <i class="fa-solid fa-pepper-hot"></i>
-                        </template>
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-col lg:flex-row justify-between items-center gap-3 relative z-10">
+                <!-- Brand Identity -->
+                <div class="flex items-center space-x-3.5 w-full lg:w-auto justify-between lg:justify-start">
+                    <div class="flex items-center space-x-3">
+                        <div class="bg-white text-red-800 w-10 h-10 rounded-xl font-extrabold text-lg shadow-md flex items-center justify-center overflow-hidden shrink-0 ring-2 ring-white/20">
+                            <template x-if="branding.logoUrl">
+                                <img :src="branding.logoUrl" @error="branding.logoUrl = ''" alt="Logo" class="w-full h-full object-contain p-0.5">
+                            </template>
+                            <template x-if="!branding.logoUrl">
+                                <i class="fa-solid fa-pepper-hot"></i>
+                            </template>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h1 class="font-extrabold text-base sm:text-lg tracking-tight leading-tight" x-text="ckProfile.name || 'Warung Sambal Samuda Nusantara'"></h1>
+                                <span class="hidden sm:inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-red-600/90 text-white border border-red-400/30">SCM PRO</span>
+                            </div>
+                            <p class="text-[11px] text-slate-300">Supply Chain, Purchase Order & Surat Jalan Terpadu</p>
+                        </div>
                     </div>
-                    <div>
-                        <h1 class="font-bold text-lg leading-tight drop-shadow-sm" x-text="ckProfile.name || 'Warung Sambal Samuda Nusantara'"></h1>
-                        <p class="text-xs text-red-100 drop-shadow-sm">Sistem Supply Chain, PO & Surat Jalan Terpadu (Multi-Device Realtime)</p>
-                    </div>
+
+                    <!-- Mobile Logout Button -->
+                    <button @click="logout()" class="lg:hidden bg-white/10 hover:bg-white/20 text-white border border-white/15 px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-right-from-bracket text-amber-400"></i> Keluar
+                    </button>
                 </div>
 
-                <!-- Role Navigation + Logout -->
-                <div class="flex flex-wrap items-center justify-center gap-2 max-w-full">
-                    <div class="flex items-center space-x-1.5 bg-red-900/60 p-1.5 rounded-xl border border-red-700 overflow-x-auto max-w-full">
-                        <span class="text-xs font-semibold px-2 text-red-200 whitespace-nowrap">
-                            <i class="fa-solid fa-user-shield mr-1"></i> Menu:
-                        </span>
-
-                        <!-- Tab Admin Resto: Tampil HANYA jika login Resto atau Super Admin -->
+                <!-- Role Navigation Pill Switcher + Desktop Logout -->
+                <div class="flex flex-wrap items-center justify-center gap-2.5 w-full lg:w-auto">
+                    <nav class="flex items-center space-x-1 bg-white/10 backdrop-blur-sm p-1 rounded-xl border border-white/10 overflow-x-auto max-w-full">
+                        <!-- Tab Admin Resto -->
                         <template x-if="authRole === 'resto' || authRole === 'superadmin'">
                             <button @click="currentRole = 'resto'"
-                                    :class="currentRole === 'resto' ? 'bg-white text-red-800 font-bold shadow' : 'text-white hover:bg-red-700/50'"
-                                    class="px-3 py-1.5 rounded-lg text-xs transition duration-150 whitespace-nowrap">
-                                Admin Resto
+                                    :class="currentRole === 'resto' ? 'bg-white text-slate-900 font-bold shadow-sm' : 'text-slate-200 hover:text-white hover:bg-white/10'"
+                                    class="px-3.5 py-1.5 rounded-lg text-xs transition-all duration-150 whitespace-nowrap flex items-center gap-1.5">
+                                <i class="fa-solid fa-store text-[11px]" :class="currentRole === 'resto' ? 'text-red-600' : 'text-slate-400'"></i>
+                                <span>Admin Resto</span>
                             </button>
                         </template>
 
-                        <!-- Tab Central Kitchen: Tampil HANYA jika login CK atau Super Admin -->
-                    <template x-if="authRole === 'ck' || authRole === 'superadmin'">
-                        <button @click="currentRole = 'ck'"
-                                :class="currentRole === 'ck' ? 'bg-white text-red-800 font-bold shadow' : 'text-white hover:bg-red-700/50'"
-                                class="px-3 py-1.5 rounded-lg text-xs transition duration-150 whitespace-nowrap flex items-center gap-1.5">
-                            <span>Central Kitchen</span>
-                            <span x-show="lowStockItems.length > 0"
-                                  x-text="lowStockItems.length"
-                                  title="Item di bawah buffer (Perlu Produksi)"
-                                  class="px-1.5 py-0.5 text-[10px] font-black rounded-full bg-amber-400 text-red-950 animate-pulse"></span>
-                        </button>
-                    </template>
+                        <!-- Tab Central Kitchen -->
+                        <template x-if="authRole === 'ck' || authRole === 'superadmin'">
+                            <button @click="currentRole = 'ck'"
+                                    :class="currentRole === 'ck' ? 'bg-white text-slate-900 font-bold shadow-sm' : 'text-slate-200 hover:text-white hover:bg-white/10'"
+                                    class="px-3.5 py-1.5 rounded-lg text-xs transition-all duration-150 whitespace-nowrap flex items-center gap-1.5">
+                                <i class="fa-solid fa-industry text-[11px]" :class="currentRole === 'ck' ? 'text-red-600' : 'text-slate-400'"></i>
+                                <span>Central Kitchen</span>
+                                <span x-show="lowStockItems.length > 0"
+                                      x-text="lowStockItems.length"
+                                      title="Item di bawah buffer (Perlu Produksi)"
+                                      class="px-1.5 py-0.5 text-[10px] font-extrabold rounded-full bg-amber-400 text-slate-950"></span>
+                            </button>
+                        </template>
 
-                        <!-- Tab Audit & Laporan: Tampil HANYA jika login CK atau Super Admin -->
+                        <!-- Tab Audit & Laporan -->
                         <template x-if="authRole === 'ck' || authRole === 'superadmin'">
                             <button @click="currentRole = 'audit'"
-                                    :class="currentRole === 'audit' ? 'bg-white text-red-800 font-bold shadow' : 'text-white hover:bg-red-700/50'"
-                                    class="px-3 py-1.5 rounded-lg text-xs transition duration-150 whitespace-nowrap">
-                                Audit & Laporan
+                                    :class="currentRole === 'audit' ? 'bg-white text-slate-900 font-bold shadow-sm' : 'text-slate-200 hover:text-white hover:bg-white/10'"
+                                    class="px-3.5 py-1.5 rounded-lg text-xs transition-all duration-150 whitespace-nowrap flex items-center gap-1.5">
+                                <i class="fa-solid fa-chart-line text-[11px]" :class="currentRole === 'audit' ? 'text-red-600' : 'text-slate-400'"></i>
+                                <span>Audit & Laporan</span>
                             </button>
                         </template>
 
-                        <!-- Tab Super Admin: Tampil HANYA jika login Super Admin -->
+                        <!-- Tab Super Admin -->
                         <template x-if="authRole === 'superadmin'">
                             <button @click="currentRole = 'superadmin'"
-                                    :class="currentRole === 'superadmin' ? 'bg-amber-400 text-red-950 font-black shadow' : 'text-amber-200 hover:bg-red-700/50'"
-                                    class="px-3 py-1.5 rounded-lg text-xs transition duration-150 whitespace-nowrap">
-                                <i class="fa-solid fa-crown mr-1"></i> Super Admin
+                                    :class="currentRole === 'superadmin' ? 'bg-amber-400 text-slate-950 font-extrabold shadow-sm' : 'text-amber-300 hover:bg-white/10'"
+                                    class="px-3.5 py-1.5 rounded-lg text-xs transition-all duration-150 whitespace-nowrap flex items-center gap-1.5">
+                                <i class="fa-solid fa-crown text-[11px]"></i>
+                                <span>Super Admin</span>
                             </button>
                         </template>
-                    </div>
+                    </nav>
 
-                    <!-- Tombol Keluar / Ganti Akun -->
-                    <button @click="logout()" class="bg-slate-900 hover:bg-slate-950 text-white border border-slate-700 px-3.5 py-2 rounded-xl text-xs font-bold shadow transition flex items-center gap-1.5 whitespace-nowrap">
-                        <i class="fa-solid fa-right-from-bracket text-amber-400"></i> Keluar / Ganti Akun
+                    <!-- Desktop Tombol Keluar / Ganti Akun -->
+                    <button @click="logout()" class="hidden lg:flex bg-red-600/90 hover:bg-red-600 text-white border border-red-400/30 px-3.5 py-2 rounded-xl text-xs font-bold shadow-sm transition items-center gap-1.5 whitespace-nowrap">
+                        <i class="fa-solid fa-right-from-bracket"></i> Keluar
                     </button>
                 </div>
             </div>
         </header>
 
         <!-- MAIN CONTAINER -->
-        <main class="max-w-7xl mx-auto px-4 py-6">
+        <main class="max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 flex-1">
 
             <!-- HERO BANNER WORKSPACE (JIKA CUSTOM BANNER DIAKTIFKAN) -->
             <template x-if="branding.bannerUrl">
-                <div class="mb-6 rounded-2xl overflow-hidden shadow-md border border-slate-200 relative h-32 sm:h-40 no-print">
+                <div class="mb-6 rounded-2xl overflow-hidden shadow-card border border-slate-200/80 relative h-32 sm:h-40 no-print">
                     <img :src="branding.bannerUrl" @error="branding.bannerUrl = ''" alt="Workspace Banner" class="w-full h-full object-cover">
-                    <div class="absolute inset-0 bg-gradient-to-r from-slate-950/85 via-red-950/60 to-transparent flex items-center px-6">
+                    <div class="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-red-950/65 to-transparent flex items-center px-6">
                         <div class="flex items-center gap-4 text-white">
                             <template x-if="branding.logoUrl">
                                 <img :src="branding.logoUrl" alt="Logo Brand" class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white p-1.5 object-contain shadow-lg shrink-0">
                             </template>
                             <div>
-                                <span class="inline-block bg-amber-400 text-slate-950 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider mb-1" x-text="ckProfile.subtitle || 'Central Kitchen & Distribution'"></span>
-                                <h2 class="text-lg sm:text-2xl font-black tracking-tight drop-shadow" x-text="ckProfile.name"></h2>
+                                <span class="inline-block bg-amber-400 text-slate-950 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider mb-1" x-text="ckProfile.subtitle || 'Central Kitchen & Distribution'"></span>
+                                <h2 class="text-lg sm:text-2xl font-extrabold tracking-tight drop-shadow" x-text="ckProfile.name"></h2>
                                 <p class="text-xs text-slate-200 line-clamp-1" x-text="ckProfile.address"></p>
                             </div>
                         </div>
@@ -312,30 +361,31 @@
                 </div>
             </template>
 
-            <!-- NOTIFICATION BANNER INFO -->
-            <div class="mb-6 bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-3 no-print">
-                <div class="flex items-center space-x-3">
-                    <div class="bg-red-100 text-red-700 p-2.5 rounded-lg">
-                        <i class="fa-solid fa-cloud-arrow-up text-lg"></i>
+            <!-- WORKSPACE CONTEXT BAR -->
+            <div class="mb-6 bg-white border border-slate-200/80 rounded-2xl p-4 shadow-soft flex flex-col md:flex-row items-start md:items-center justify-between gap-3.5 no-print">
+                <div class="flex items-center space-x-3.5">
+                    <div class="bg-gradient-to-br from-red-50 to-red-100 text-red-700 w-11 h-11 rounded-xl flex items-center justify-center border border-red-200/60 shrink-0">
+                        <i class="fa-solid fa-layer-group text-lg"></i>
                     </div>
                     <div>
-                        <p class="text-xs text-slate-500 font-medium">
-                            Sesi Login: <span class="font-bold text-red-700" x-text="getAuthSessionLabel()"></span>
-                        </p>
-                        <p class="text-sm font-bold text-slate-800" x-text="getRoleName() + ' — ' + (currentRole === 'resto' ? getSelectedOutletName() : ckProfile.name)"></p>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="text-[11px] font-semibold text-slate-500">Sesi Aktif:</span>
+                            <span class="text-[11px] font-bold text-red-700 bg-red-50 px-2 py-0.5 rounded-md border border-red-100" x-text="getAuthSessionLabel()"></span>
+                        </div>
+                        <p class="text-sm sm:text-base font-extrabold text-slate-900 mt-0.5" x-text="getRoleName() + ' — ' + (currentRole === 'resto' ? getSelectedOutletName() : ckProfile.name)"></p>
                     </div>
                 </div>
-                <div class="flex flex-wrap items-center gap-3">
-                    <div class="text-[11px] font-semibold px-3 py-1 rounded-full flex items-center gap-1.5"
-                         :class="isCloudConnected ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'">
+                <div class="flex flex-wrap items-center gap-2.5 w-full md:w-auto justify-between md:justify-end">
+                    <div class="text-[11px] font-semibold px-3 py-1.5 rounded-xl flex items-center gap-2 border"
+                         :class="isCloudConnected ? 'bg-emerald-50/80 text-emerald-800 border-emerald-200/80' : 'bg-amber-50/80 text-amber-800 border-amber-200/80'">
                         <span class="w-2 h-2 rounded-full" :class="isCloudConnected ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'"></span>
-                        <span x-text="isCloudConnected ? 'Terhubung Firebase Cloud (scm-sambal-samuda)' : 'Mode Lokal (Cek Firestore Rules)'"></span>
-                        <button x-show="!isCloudConnected" @click="reconnectFirebase()" class="ml-1 underline text-red-700 hover:text-red-900 font-bold">Hubungkan Ulang</button>
+                        <span x-text="isCloudConnected ? 'Firebase Cloud Realtime' : 'Mode Penyimpanan Lokal'"></span>
+                        <button x-show="!isCloudConnected" @click="reconnectFirebase()" class="ml-1 underline text-red-700 hover:text-red-900 font-bold">Hubungkan</button>
                     </div>
                     <template x-if="currentRole === 'resto'">
-                        <div class="flex items-center gap-2">
-                            <label class="text-xs font-semibold text-slate-600">Outlet Aktif:</label>
-                            <select x-model="selectedOutletId" class="text-xs border border-slate-300 rounded-lg px-3 py-1.5 bg-slate-50 font-bold text-slate-800 focus:ring-2 focus:ring-red-500">
+                        <div class="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200">
+                            <label class="text-[11px] font-bold text-slate-500 uppercase">Outlet:</label>
+                            <select x-model="selectedOutletId" class="text-xs bg-transparent font-extrabold text-slate-800 focus:outline-none cursor-pointer">
                                 <template x-for="o in outlets" :key="o.id">
                                     <option :value="o.id" x-text="o.name"></option>
                                 </template>
@@ -347,30 +397,32 @@
 
             <!-- ================= VIEW 1: ADMIN RESTO (OUTLET) ================= -->
             <div x-show="currentRole === 'resto' && (authRole === 'resto' || authRole === 'superadmin')" class="space-y-6">
-                <!-- Ringkasan Cepat Outlet -->
+                <!-- KPI Cards Outlet -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between">
+                    <div class="bg-white p-5 rounded-2xl shadow-soft border border-slate-200/80 flex items-center justify-between hover:border-slate-300 transition">
                         <div>
                             <p class="text-xs font-semibold text-slate-500">Total PO Outlet Ini</p>
-                            <p class="text-2xl font-black text-slate-800 mt-1" x-text="filteredRestoPOs.length"></p>
+                            <p class="text-3xl font-extrabold text-slate-900 mt-1 tracking-tight" x-text="filteredRestoPOs.length"></p>
+                            <p class="text-[11px] text-slate-400 mt-1">Riwayat permintaan bahan baku</p>
                         </div>
-                        <div class="bg-red-100 text-red-700 p-3 rounded-xl text-xl"><i class="fa-solid fa-file-invoice"></i></div>
+                        <div class="bg-slate-100 text-slate-700 w-12 h-12 rounded-2xl flex items-center justify-center text-xl"><i class="fa-solid fa-file-invoice"></i></div>
                     </div>
-                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between">
+                    <div class="bg-white p-5 rounded-2xl shadow-soft border border-slate-200/80 flex items-center justify-between hover:border-blue-200 transition">
                         <div>
                             <p class="text-xs font-semibold text-slate-500">Barang Dalam Pengiriman</p>
-                            <p class="text-2xl font-black text-blue-600 mt-1" x-text="pendingReceiptsCount"></p>
+                            <p class="text-3xl font-extrabold text-blue-600 mt-1 tracking-tight" x-text="pendingReceiptsCount"></p>
+                            <p class="text-[11px] text-slate-400 mt-1">Menunggu konfirmasi fisik outlet</p>
                         </div>
-                        <div class="bg-blue-100 text-blue-700 p-3 rounded-xl text-xl"><i class="fa-solid fa-truck-fast"></i></div>
+                        <div class="bg-blue-50 text-blue-600 w-12 h-12 rounded-2xl flex items-center justify-center text-xl border border-blue-100"><i class="fa-solid fa-truck-fast"></i></div>
                     </div>
-                    <div class="bg-gradient-to-br from-red-700 to-red-900 text-white p-5 rounded-2xl shadow-md flex items-center justify-between">
-                        <div>
-                            <p class="text-xs text-red-200 font-medium">Pesan Bahan Baku ke CK</p>
-                            <button @click="openCreatePOModal()" class="mt-2 bg-white text-red-800 hover:bg-red-50 px-4 py-2 rounded-xl text-xs font-bold shadow transition">
-                                <i class="fa-solid fa-plus mr-1"></i> Buat PO Baru
+                    <div class="bg-gradient-to-br from-red-700 via-red-800 to-slate-900 text-white p-5 rounded-2xl shadow-glow-red flex items-center justify-between relative overflow-hidden">
+                        <div class="relative z-10">
+                            <p class="text-xs text-red-200 font-semibold">Order Stok ke Central Kitchen</p>
+                            <button @click="openCreatePOModal()" class="mt-2.5 bg-white text-red-800 hover:bg-red-50 px-4 py-2 rounded-xl text-xs font-extrabold shadow-md transition active:scale-95 flex items-center gap-1.5">
+                                <i class="fa-solid fa-plus"></i> Buat PO Baru
                             </button>
                         </div>
-                        <div class="text-3xl text-red-300/60"><i class="fa-solid fa-cart-shopping"></i></div>
+                        <div class="text-4xl text-white/15 relative z-10"><i class="fa-solid fa-cart-shopping"></i></div>
                     </div>
                 </div>
 
@@ -514,28 +566,42 @@
 
             <!-- ================= VIEW 2: CENTRAL KITCHEN ================= -->
             <div x-show="currentRole === 'ck' && (authRole === 'ck' || authRole === 'superadmin')" class="space-y-6">
-                <!-- Ringkasan Central Kitchen -->
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
-                        <p class="text-xs font-semibold text-slate-500">PO Baru (Menunggu Proses)</p>
-                        <p class="text-2xl font-black text-amber-600 mt-1" x-text="pendingPOCount"></p>
-                    </div>
-                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
-                        <p class="text-xs font-semibold text-slate-500">Total SKU Bahan Baku</p>
-                        <p class="text-2xl font-black text-slate-800 mt-1" x-text="inventory.length"></p>
-                    </div>
-                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
-                        <p class="text-xs font-semibold text-slate-500">Perlu Produksi (≤ Buffer)</p>
-                        <p class="text-2xl font-black text-red-600 mt-1" x-text="lowStockItems.length"></p>
-                    </div>
-                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between">
+                <!-- KPI Cards Central Kitchen -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-white p-5 rounded-2xl shadow-soft border border-slate-200/80 flex items-center justify-between">
                         <div>
-                            <p class="text-xs font-semibold text-slate-500">Kelola Stok & Produksi</p>
-                            <button @click="openRestockModal()" class="mt-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow">
-                                <i class="fa-solid fa-plus mr-1"></i> Catat Produksi / Restock
-                            </button>
+                            <p class="text-xs font-semibold text-slate-500">PO Baru (Menunggu)</p>
+                            <p class="text-3xl font-extrabold text-amber-600 mt-1 tracking-tight" x-text="pendingPOCount"></p>
                         </div>
-                        <div class="text-2xl text-emerald-600"><i class="fa-solid fa-warehouse"></i></div>
+                        <div class="bg-amber-50 text-amber-600 w-11 h-11 rounded-xl flex items-center justify-center text-lg border border-amber-100"><i class="fa-solid fa-clock"></i></div>
+                    </div>
+                    <div class="bg-white p-5 rounded-2xl shadow-soft border border-slate-200/80 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-semibold text-slate-500">Total SKU Bahan Baku</p>
+                            <p class="text-3xl font-extrabold text-slate-900 mt-1 tracking-tight" x-text="inventory.length"></p>
+                        </div>
+                        <div class="bg-slate-100 text-slate-700 w-11 h-11 rounded-xl flex items-center justify-center text-lg"><i class="fa-solid fa-boxes-stacked"></i></div>
+                    </div>
+                    <div class="bg-white p-5 rounded-2xl shadow-soft border border-slate-200/80 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-semibold text-slate-500">Perlu Produksi (≤ Buffer)</p>
+                            <p class="text-3xl font-extrabold text-red-600 mt-1 tracking-tight" x-text="lowStockItems.length"></p>
+                        </div>
+                        <div class="bg-red-50 text-red-600 w-11 h-11 rounded-xl flex items-center justify-center text-lg border border-red-100"><i class="fa-solid fa-fire-burner"></i></div>
+                    </div>
+                    <div class="bg-gradient-to-br from-emerald-700 to-emerald-900 text-white p-5 rounded-2xl shadow-md flex items-center justify-between">
+                        <div>
+                            <p class="text-xs text-emerald-100 font-semibold">Input Hasil Dapur</p>
+                            <div class="flex flex-wrap gap-1.5 mt-2">
+                                <button @click="openRestockModal()" class="bg-white text-emerald-900 hover:bg-emerald-50 px-3 py-2 rounded-xl text-xs font-extrabold shadow transition active:scale-95">
+                                    <i class="fa-solid fa-plus mr-1"></i> Produksi / Restock
+                                </button>
+                                <button @click="openPoultryProductionModal()" class="bg-amber-400 text-slate-950 hover:bg-amber-300 px-3 py-2 rounded-xl text-xs font-extrabold shadow transition active:scale-95">
+                                    <i class="fa-solid fa-drumstick-bite mr-1"></i> Unggas (Sampel & Reject)
+                                </button>
+                            </div>
+                        </div>
+                        <div class="text-3xl text-white/20"><i class="fa-solid fa-warehouse"></i></div>
                     </div>
                 </div>
 
@@ -754,7 +820,7 @@
             <!-- ================= VIEW 3: AUDIT & LAPORAN ================= -->
             <div x-show="currentRole === 'audit' && (authRole === 'ck' || authRole === 'superadmin')" class="space-y-6">
                 <!-- Ringkasan Audit -->
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                     <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
                         <p class="text-xs font-semibold text-slate-500">Total Surat Jalan Terbit</p>
                         <p class="text-2xl font-black text-slate-800 mt-1" x-text="deliveryNotes.length"></p>
@@ -767,9 +833,46 @@
                         <p class="text-xs font-semibold text-slate-500">Temuan Selisih Barang</p>
                         <p class="text-2xl font-black text-amber-600 mt-1" x-text="deliveryNotes.filter(s => s.status === 'DISCREPANCY').length"></p>
                     </div>
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-rose-200 bg-rose-50/40">
+                        <p class="text-xs font-semibold text-rose-700">Total Reject Produksi</p>
+                        <p class="text-2xl font-black text-rose-700 mt-1" x-text="totalRejectCount + ' pcs/pack'"></p>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-purple-200 bg-purple-50/40">
+                        <p class="text-xs font-semibold text-purple-700">Total Sampel QC (Non-Stok)</p>
+                        <p class="text-2xl font-black text-purple-700 mt-1" x-text="totalSampleCount + ' pcs/pack'"></p>
+                    </div>
                 </div>
 
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Navigasi Sub-Menu Audit & Laporan -->
+                <div class="flex flex-wrap gap-2 bg-white p-2 rounded-2xl border border-slate-200 shadow-soft">
+                    <button @click="auditSubTab = 'stockcard'"
+                            :class="auditSubTab === 'stockcard' ? 'bg-slate-900 text-white font-bold shadow-sm' : 'text-slate-600 hover:bg-slate-100 font-semibold'"
+                            class="px-4 py-2 rounded-xl text-xs transition flex items-center gap-2">
+                        <i class="fa-solid fa-clock-rotate-left text-red-500"></i>
+                        <span>Kartu Stok & Audit Pengiriman</span>
+                    </button>
+                    <button @click="auditSubTab = 'reject'"
+                            :class="auditSubTab === 'reject' ? 'bg-rose-700 text-white font-bold shadow-sm' : 'text-rose-700 bg-rose-50 hover:bg-rose-100 font-bold'"
+                            class="px-4 py-2 rounded-xl text-xs transition flex items-center gap-2">
+                        <i class="fa-solid fa-ban"></i>
+                        <span>Reject (Per Produk)</span>
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-black"
+                              :class="auditSubTab === 'reject' ? 'bg-white text-rose-800' : 'bg-rose-200 text-rose-900'"
+                              x-text="rejectLogs.length"></span>
+                    </button>
+                    <button @click="auditSubTab = 'sample'"
+                            :class="auditSubTab === 'sample' ? 'bg-purple-700 text-white font-bold shadow-sm' : 'text-purple-700 bg-purple-50 hover:bg-purple-100 font-bold'"
+                            class="px-4 py-2 rounded-xl text-xs transition flex items-center gap-2">
+                        <i class="fa-solid fa-vial"></i>
+                        <span>Laporan Sampel Produksi (Bukan Stok)</span>
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-black"
+                              :class="auditSubTab === 'sample' ? 'bg-white text-purple-800' : 'bg-purple-200 text-purple-900'"
+                              x-text="sampleLogs.length"></span>
+                    </button>
+                </div>
+
+                <!-- SUB-TAB 1: KARTU STOK & AUDIT SURAT JALAN -->
+                <div x-show="auditSubTab === 'stockcard'" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <!-- Kartu Stok (Stock Card Mutasi) -->
                     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
                         <div class="p-4 border-b border-slate-100 bg-slate-50 flex flex-wrap justify-between items-center gap-2">
@@ -904,6 +1007,134 @@
                                 </tbody>
                             </table>
                         </div>
+                    </div>
+                </div>
+
+                <!-- SUB-TAB 2: MENU REJECT (OTOMATIS MASUK PER PRODUK) -->
+                <div x-show="auditSubTab === 'reject'" class="space-y-6">
+                    <!-- Ringkasan Reject Per Produk Unggas -->
+                    <div class="bg-white rounded-2xl shadow-sm border border-rose-200 overflow-hidden">
+                        <div class="p-4 border-b border-rose-100 bg-rose-50/70 flex flex-wrap justify-between items-center gap-2">
+                            <div>
+                                <h2 class="font-bold text-rose-950 text-sm"><i class="fa-solid fa-ban text-rose-600 mr-2"></i> Rekap Akumulasi Reject per Produk</h2>
+                                <p class="text-[11px] text-rose-700">Otomatis terakumulasi per jenis produk saat input produksi unggas (tidak masuk ke stok ready)</p>
+                            </div>
+                            <button @click="openPoultryProductionModal()" class="bg-rose-600 hover:bg-rose-700 text-white px-3.5 py-2 rounded-xl text-xs font-bold shadow">
+                                <i class="fa-solid fa-plus mr-1"></i> Input Produksi / Reject Baru
+                            </button>
+                        </div>
+                        <div class="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                            <template x-if="rejectSummaryByProduct.length === 0">
+                                <div class="col-span-full py-6 text-center text-xs text-slate-400 italic">Belum ada data produk reject yang tercatat.</div>
+                            </template>
+                            <template x-for="rSum in rejectSummaryByProduct" :key="rSum.itemName">
+                                <div class="bg-rose-50/50 border border-rose-200 rounded-2xl p-4 flex items-center justify-between">
+                                    <div>
+                                        <span class="text-[10px] font-bold uppercase tracking-wider text-rose-600">Total Reject Produk</span>
+                                        <p class="font-extrabold text-slate-900 text-sm mt-0.5" x-text="rSum.itemName"></p>
+                                        <p class="text-[11px] text-slate-500 mt-0.5" x-text="rSum.count + ' kali kejadian'"></p>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="text-xl font-black text-rose-700 font-mono" x-text="rSum.totalQty"></span>
+                                        <span class="block text-[11px] font-bold text-rose-600" x-text="rSum.unit"></span>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Tabel Log Rincian Reject -->
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                        <div class="p-4 border-b border-slate-100 bg-slate-50 flex flex-wrap justify-between items-center gap-2">
+                            <h3 class="font-bold text-slate-800 text-sm"><i class="fa-solid fa-list-ul text-rose-600 mr-2"></i> Riwayat Rincian Produk Reject</h3>
+                            <select x-model="rejectProductFilter" class="border border-slate-300 rounded-xl px-3 py-1.5 text-xs font-bold bg-white">
+                                <option value="">-- Semua Produk --</option>
+                                <template x-for="rSum in rejectSummaryByProduct" :key="rSum.itemName">
+                                    <option :value="rSum.itemName" x-text="rSum.itemName"></option>
+                                </template>
+                            </select>
+                        </div>
+                        <div class="p-4 overflow-x-auto">
+                            <table class="w-full text-left text-xs">
+                                <thead>
+                                    <tr class="text-slate-500 border-b border-slate-100">
+                                        <th class="pb-2.5">Waktu Input</th>
+                                        <th class="pb-2.5">No. Batch</th>
+                                        <th class="pb-2.5">Nama Produk</th>
+                                        <th class="pb-2.5 text-center">Jumlah Reject</th>
+                                        <th class="pb-2.5">Alasan / Keterangan Reject</th>
+                                        <th class="pb-2.5 text-right">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100">
+                                    <template x-if="filteredRejectLogs.length === 0">
+                                        <tr><td colspan="6" class="py-8 text-center text-slate-400 italic">Tidak ada riwayat reject untuk filter ini.</td></tr>
+                                    </template>
+                                    <template x-for="rej in filteredRejectLogs" :key="rej.id">
+                                        <tr class="hover:bg-rose-50/30">
+                                            <td class="py-3 text-slate-500 whitespace-nowrap" x-text="formatDateTime(rej.timestamp)"></td>
+                                            <td class="py-3 font-mono font-bold text-slate-700" x-text="rej.batchNo"></td>
+                                            <td class="py-3 font-bold text-slate-900" x-text="rej.itemName"></td>
+                                            <td class="py-3 text-center">
+                                                <span class="px-2.5 py-1 rounded-lg font-black bg-rose-100 text-rose-800" x-text="rej.qty + ' ' + rej.unit"></span>
+                                            </td>
+                                            <td class="py-3 text-slate-600" x-text="rej.notes || '-'"></td>
+                                            <td class="py-3 text-right">
+                                                <button @click="deleteRejectLog(rej.id)" class="text-rose-600 hover:text-rose-800 font-bold px-2 py-1" title="Hapus Log Reject"><i class="fa-solid fa-trash"></i></button>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SUB-TAB 3: LAPORAN SAMPEL PRODUKSI (TERPISAH / BUKAN STOK) -->
+                <div x-show="auditSubTab === 'sample'" class="bg-white rounded-2xl shadow-sm border border-purple-200 overflow-hidden">
+                    <div class="p-4 border-b border-purple-100 bg-purple-50/70 flex flex-wrap justify-between items-center gap-2">
+                        <div>
+                            <h2 class="font-bold text-purple-950 text-sm"><i class="fa-solid fa-vial text-purple-600 mr-2"></i> Laporan Pengambilan Sampel Produksi (Bukan Stok)</h2>
+                            <p class="text-[11px] text-purple-700">Catatan khusus sampel QC / uji rasa dapur yang dipisahkan dari saldo stok gudang</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button @click="printSampleReport()" class="bg-slate-900 hover:bg-slate-800 text-white px-3.5 py-2 rounded-xl text-xs font-bold shadow flex items-center gap-1.5">
+                                <i class="fa-solid fa-print text-amber-400"></i> Cetak Laporan Sampel
+                            </button>
+                        </div>
+                    </div>
+                    <div class="p-4 overflow-x-auto">
+                        <table class="w-full text-left text-xs">
+                            <thead>
+                                <tr class="text-slate-500 border-b border-slate-100">
+                                    <th class="pb-2.5">Waktu Input</th>
+                                    <th class="pb-2.5">No. Batch</th>
+                                    <th class="pb-2.5">Nama Produk</th>
+                                    <th class="pb-2.5 text-center">Jumlah Sampel</th>
+                                    <th class="pb-2.5">Keterangan / Tujuan Sampel</th>
+                                    <th class="pb-2.5 text-right">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                <template x-if="sampleLogs.length === 0">
+                                    <tr><td colspan="6" class="py-8 text-center text-slate-400 italic">Belum ada data sampel produksi yang tercatat.</td></tr>
+                                </template>
+                                <template x-for="smp in sampleLogs" :key="smp.id">
+                                    <tr class="hover:bg-purple-50/30">
+                                        <td class="py-3 text-slate-500 whitespace-nowrap" x-text="formatDateTime(smp.timestamp)"></td>
+                                        <td class="py-3 font-mono font-bold text-slate-700" x-text="smp.batchNo"></td>
+                                        <td class="py-3 font-bold text-slate-900" x-text="smp.itemName"></td>
+                                        <td class="py-3 text-center">
+                                            <span class="px-2.5 py-1 rounded-lg font-black bg-purple-100 text-purple-800" x-text="smp.qty + ' ' + smp.unit"></span>
+                                        </td>
+                                        <td class="py-3 text-slate-600" x-text="smp.notes || 'Sampel QC Dapur'"></td>
+                                        <td class="py-3 text-right">
+                                            <button @click="deleteSampleLog(smp.id)" class="text-rose-600 hover:text-rose-800 font-bold px-2 py-1" title="Hapus Laporan Sampel"><i class="fa-solid fa-trash"></i></button>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -1259,72 +1490,63 @@
     </div>
 
     <!-- Modal Buat / Edit PO (Resto) -->
-    <div x-show="showCreatePOModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" x-cloak>
-        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden border border-slate-200">
-            <div class="bg-red-800 text-white p-4 flex justify-between items-center">
+    <div x-show="showCreatePOModal" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" x-cloak>
+        <div class="bg-white rounded-3xl shadow-2xl max-w-2xl w-full overflow-hidden border border-slate-200">
+            <div class="bg-gradient-to-r from-red-800 to-red-900 text-white px-6 py-4 flex justify-between items-center">
                 <h3 class="font-bold text-base">
                     <i class="fa-solid fa-cart-plus mr-2"></i>
                     <span x-text="editingRestoPOId ? 'Edit Purchase Order (' + editingRestoPOId + ')' : 'Buat Purchase Order (PO) ke Central Kitchen'"></span>
                 </h3>
-                <button @click="showCreatePOModal = false" class="text-white hover:text-red-200 text-lg font-bold">&times;</button>
+                <button @click="showCreatePOModal = false" class="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center font-bold transition">&times;</button>
             </div>
             <div class="p-6 space-y-4 max-h-[75vh] overflow-y-auto text-xs">
-                <div>
-                    <label class="block font-semibold text-slate-700 mb-1">Target Tanggal Kirim</label>
-                    <input type="date" x-model="newPO.targetDate" class="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50 font-medium">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Outlet Pemesan</label>
+                        <input type="text" :value="getSelectedOutletName()" disabled class="w-full border border-slate-300 rounded-xl p-2.5 bg-slate-100 text-slate-600 font-bold">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Target Tanggal Kirim <span class="text-red-600">*</span></label>
+                        <input type="date" x-model="newPO.targetDate" class="w-full border border-slate-300 rounded-xl p-2.5 bg-white font-bold text-slate-800 focus:ring-2 focus:ring-red-500">
+                    </div>
                 </div>
+
                 <div>
                     <div class="flex justify-between items-center mb-2">
-                        <label class="font-semibold text-slate-700">Daftar Bahan Baku Pesanan</label>
-                        <button @click="addItemToPOForm()" class="bg-red-100 text-red-800 hover:bg-red-200 px-2.5 py-1 rounded-lg font-bold text-[11px]">+ Tambah Item</button>
+                        <label class="font-bold text-slate-800">Daftar Bahan Baku / Item yang Dipesan:</label>
+                        <button type="button" @click="addItemToPOForm()" class="bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 px-3 py-1.5 rounded-xl font-bold transition">
+                            <i class="fa-solid fa-plus mr-1"></i> Tambah Baris Item
+                        </button>
                     </div>
-                    <div class="space-y-2">
-                        <template x-for="(item, index) in newPO.items" :key="index">
-                            <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-1.5">
+                    <div class="space-y-2.5">
+                        <template x-for="(item, idx) in newPO.items" :key="idx">
+                            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 bg-slate-50 p-3 rounded-2xl border border-slate-200">
+                                <select x-model="item.itemId" class="flex-1 border border-slate-300 rounded-xl p-2.5 bg-white font-semibold text-slate-800 focus:ring-2 focus:ring-red-500">
+                                    <option value="">-- Pilih Bahan Baku / Sambal --</option>
+                                    <template x-for="inv in inventory" :key="inv.id">
+                                        <option :value="inv.id" x-text="inv.name + ' (' + inv.unit + ')'"></option>
+                                    </template>
+                                </select>
                                 <div class="flex items-center gap-2">
-                                    <select x-model="item.itemId" class="flex-1 border border-slate-300 rounded-lg p-2 bg-white font-medium">
-                                        <option value="">-- Pilih Bahan Baku --</option>
-                                        <template x-for="inv in inventory" :key="inv.id">
-                                            <option :value="inv.id" x-text="inv.name + ' — Stok Real CK: ' + (Number(inv.stock) || 0) + ' ' + inv.unit"></option>
-                                        </template>
-                                    </select>
-                                    <input type="number" min="1" x-model.number="item.qty" class="w-24 border border-slate-300 rounded-lg p-2 text-center font-bold bg-white">
-                                    <span class="text-slate-500 font-medium w-12" x-text="getItemUnit(item.itemId)"></span>
-                                    <button type="button" @click="removeItemFromPOForm(index)" class="text-red-500 hover:text-red-700 p-2 font-bold">
+                                    <input type="number" min="1" x-model.number="item.qty" placeholder="Qty" class="w-24 border border-slate-300 rounded-xl p-2.5 text-center font-extrabold bg-white focus:ring-2 focus:ring-red-500">
+                                    <span class="text-slate-500 font-semibold w-12" x-text="item.itemId ? getItemUnit(item.itemId) : 'unit'"></span>
+                                    <button type="button" @click="removeItemFromPOForm(idx)" class="bg-rose-50 hover:bg-rose-100 text-rose-600 p-2.5 rounded-xl font-bold transition" title="Hapus Baris">
                                         <i class="fa-solid fa-trash"></i>
                                     </button>
                                 </div>
-                                <template x-if="item.itemId">
-                                    <div class="flex flex-wrap items-center justify-between gap-2 px-1 text-[11px]">
-                                        <div class="flex items-center gap-1.5">
-                                            <span class="text-slate-500">Stok Real Central Kitchen:</span>
-                                            <span class="px-2 py-0.5 rounded-md font-black"
-                                                  :class="getItemStock(item.itemId) <= 0 ? 'bg-red-100 text-red-700' : (Number(item.qty) > getItemStock(item.itemId) ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800')"
-                                                  x-text="getItemStock(item.itemId) + ' ' + getItemUnit(item.itemId)"></span>
-                                        </div>
-                                        <span x-show="getItemStock(item.itemId) <= 0" class="text-red-600 font-bold">
-                                            <i class="fa-solid fa-circle-exclamation mr-1"></i> Stok CK sedang kosong
-                                        </span>
-                                        <span x-show="getItemStock(item.itemId) > 0 && Number(item.qty) > getItemStock(item.itemId)" class="text-amber-700 font-bold">
-                                            <i class="fa-solid fa-triangle-exclamation mr-1"></i> Pesanan melebihi stok ready CK
-                                        </span>
-                                        <span x-show="getItemStock(item.itemId) > 0 && Number(item.qty) <= getItemStock(item.itemId)" class="text-emerald-700 font-semibold">
-                                            <i class="fa-solid fa-circle-check mr-1"></i> Stok CK mencukupi
-                                        </span>
-                                    </div>
-                                </template>
                             </div>
                         </template>
                     </div>
                 </div>
+
                 <div>
-                    <label class="block font-semibold text-slate-700 mb-1">Catatan Tambahan untuk Central Kitchen</label>
-                    <textarea x-model="newPO.notes" rows="2" placeholder="Contoh: Kirim pagi sebelum jam 10.00 WIB" class="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50 font-medium"></textarea>
+                    <label class="block font-bold text-slate-700 mb-1">Catatan Tambahan untuk Central Kitchen (Opsional)</label>
+                    <textarea x-model="newPO.notes" rows="2" placeholder="Contoh: Kirim pagi sebelum jam 10.00 WIB..." class="w-full border border-slate-300 rounded-xl p-2.5 bg-slate-50 font-medium"></textarea>
                 </div>
             </div>
-            <div class="bg-slate-50 p-4 border-t border-slate-200 flex justify-end gap-3">
-                <button @click="showCreatePOModal = false" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-300">Batal</button>
-                <button @click="submitNewPO()" class="px-5 py-2 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 shadow flex items-center gap-1.5">
+            <div class="bg-slate-50 px-6 py-4 border-t border-slate-200 flex justify-end gap-3">
+                <button @click="showCreatePOModal = false" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-300 transition">Batal</button>
+                <button @click="submitNewPO()" class="px-5 py-2 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 shadow flex items-center gap-1.5 transition">
                     <i class="fa-solid fa-paper-plane"></i>
                     <span x-text="editingRestoPOId ? 'Simpan Perubahan PO' : 'Kirim PO ke Central Kitchen'"></span>
                 </button>
@@ -1332,84 +1554,292 @@
         </div>
     </div>
 
+    <!-- Modal Proses PO & Terbitkan Surat Jalan (Central Kitchen) -->
+    <div x-show="showProcessPOModal" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" x-cloak>
+        <div class="bg-white rounded-3xl shadow-2xl max-w-3xl w-full overflow-hidden border border-slate-200">
+            <div class="bg-gradient-to-r from-red-800 to-slate-900 text-white px-6 py-4 flex justify-between items-center">
+                <div>
+                    <h3 class="font-bold text-base"><i class="fa-solid fa-truck-fast mr-2 text-amber-400"></i> Proses PO & Terbitkan Surat Jalan</h3>
+                    <p class="text-[11px] text-slate-300" x-show="activePOForProcess" x-text="'No. PO: ' + (activePOForProcess?.id || '') + ' • Tujuan: ' + getOutletName(activePOForProcess?.outletId)"></p>
+                </div>
+                <button @click="showProcessPOModal = false" class="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center font-bold transition">&times;</button>
+            </div>
+            <template x-if="activePOForProcess">
+                <div class="p-6 space-y-5 max-h-[75vh] overflow-y-auto text-xs">
+                    <!-- Informasi Kurir & Pengirim -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1">Armada / Jenis Kurir</label>
+                            <select x-model="dispatchForm.courierType" class="w-full border border-slate-300 rounded-xl p-2.5 bg-white font-semibold">
+                                <option value="Internal Driver (Samuda Fleet)">Internal Driver (Samuda Fleet)</option>
+                                <option value="Ekspedisi / Cargo">Ekspedisi / Cargo</option>
+                                <option value="Kurir Instan (Lalamove/Grab)">Kurir Instan (Lalamove/Grab)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1">Nama Driver / Kurir <span class="text-red-600">*</span></label>
+                            <input type="text" x-model="dispatchForm.driverName" placeholder="Contoh: Pak Budi Santoso" class="w-full border border-slate-300 rounded-xl p-2.5 bg-white font-medium">
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1">Plat Kendaraan / No. Resi <span class="text-red-600">*</span></label>
+                            <input type="text" x-model="dispatchForm.plateOrResi" placeholder="Contoh: B 9123 KLM" class="w-full border border-slate-300 rounded-xl p-2.5 bg-white font-mono font-bold uppercase">
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1">Petugas Gudang CK (Pengirim)</label>
+                            <input type="text" x-model="dispatchForm.senderName" placeholder="Nama PIC Gudang CK" class="w-full border border-slate-300 rounded-xl p-2.5 bg-white font-medium">
+                        </div>
+                    </div>
+
+                    <!-- Daftar Barang yang Dikirim -->
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <label class="font-bold text-slate-800">Verifikasi Kuantitas Kirim vs Stok Gudang CK:</label>
+                            <button type="button" @click="printChecklistForm()" class="text-blue-700 hover:text-blue-900 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-xl font-bold transition">
+                                <i class="fa-solid fa-print mr-1"></i> Cetak Checklist Picking
+                            </button>
+                        </div>
+                        <div class="overflow-x-auto border border-slate-200 rounded-2xl">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-slate-100 text-slate-600 border-b border-slate-200">
+                                        <th class="p-3">Nama Bahan Baku</th>
+                                        <th class="p-3 text-center">Diminta PO</th>
+                                        <th class="p-3 text-center">Stok Ready CK</th>
+                                        <th class="p-3 text-center">Jumlah Dikirim</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100">
+                                    <template x-for="pItem in processItems" :key="pItem.itemId">
+                                        <tr>
+                                            <td class="p-3 font-bold text-slate-800" x-text="getItemName(pItem.itemId)"></td>
+                                            <td class="p-3 text-center font-semibold text-slate-600" x-text="pItem.qtyRequested + ' ' + getItemUnit(pItem.itemId)"></td>
+                                            <td class="p-3 text-center">
+                                                <span class="px-2 py-0.5 rounded-lg font-extrabold"
+                                                      :class="getItemStock(pItem.itemId) < pItem.qtyRequested ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'"
+                                                      x-text="getItemStock(pItem.itemId) + ' ' + getItemUnit(pItem.itemId)"></span>
+                                            </td>
+                                            <td class="p-3 text-center">
+                                                <div class="inline-flex items-center gap-1.5">
+                                                    <input type="number" min="0" :max="getItemStock(pItem.itemId)" x-model.number="pItem.qtyShipped" class="w-20 border border-slate-300 rounded-xl p-1.5 text-center font-extrabold bg-white focus:ring-2 focus:ring-red-500">
+                                                    <span class="text-slate-500 font-semibold" x-text="getItemUnit(pItem.itemId)"></span>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </template>
+            <div class="bg-slate-50 px-6 py-4 border-t border-slate-200 flex justify-end gap-3">
+                <button @click="showProcessPOModal = false" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-300 transition">Batal</button>
+                <button @click="confirmProcessPOAndDispatch()" :disabled="isDispatchingPO" class="px-5 py-2.5 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 shadow-glow-red flex items-center gap-2 transition disabled:opacity-50">
+                    <i class="fa-solid fa-paper-plane"></i>
+                    <span x-text="isDispatchingPO ? 'Memproses...' : 'Terbitkan Surat Jalan & Potong Stok'"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Konfirmasi Penerimaan Barang (Admin Resto) -->
+    <div x-show="showReceiveModal" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" x-cloak>
+        <div class="bg-white rounded-3xl shadow-2xl max-w-2xl w-full overflow-hidden border border-slate-200">
+            <div class="bg-gradient-to-r from-emerald-700 to-emerald-900 text-white px-6 py-4 flex justify-between items-center">
+                <div>
+                    <h3 class="font-bold text-base"><i class="fa-solid fa-box-open mr-2"></i> Konfirmasi Penerimaan Barang Outlet</h3>
+                    <p class="text-[11px] text-emerald-100" x-show="activeSJForReceive" x-text="'Surat Jalan: ' + (activeSJForReceive?.id || '') + ' • Ref PO: ' + (activeSJForReceive?.poId || '')"></p>
+                </div>
+                <button @click="showReceiveModal = false" class="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center font-bold transition">&times;</button>
+            </div>
+            <template x-if="activeSJForReceive">
+                <div class="p-6 space-y-4 max-h-[75vh] overflow-y-auto text-xs">
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Nama Penerima / Staff Outlet <span class="text-red-600">*</span></label>
+                        <input type="text" x-model="receiveReceiverName" placeholder="Contoh: Rina (Supervisor Outlet)" class="w-full border border-slate-300 rounded-xl p-2.5 bg-slate-50 font-bold focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-2">Periksa Kesesuaian Jumlah Barang Diterima:</label>
+                        <div class="overflow-x-auto border border-slate-200 rounded-2xl">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-slate-100 text-slate-600 border-b border-slate-200">
+                                        <th class="p-3">Nama Bahan Baku</th>
+                                        <th class="p-3 text-center">Dikirim CK</th>
+                                        <th class="p-3 text-center">Diterima Fisik</th>
+                                        <th class="p-3 text-center">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100">
+                                    <template x-for="rItem in receiveItemsForm" :key="rItem.itemId">
+                                        <tr>
+                                            <td class="p-3 font-bold text-slate-800" x-text="getItemName(rItem.itemId)"></td>
+                                            <td class="p-3 text-center font-semibold text-slate-600" x-text="rItem.qtyShipped + ' ' + getItemUnit(rItem.itemId)"></td>
+                                            <td class="p-3 text-center">
+                                                <div class="inline-flex items-center gap-1">
+                                                    <input type="number" min="0" x-model.number="rItem.qtyReceived" class="w-20 border border-slate-300 rounded-xl p-1.5 text-center font-extrabold bg-white focus:ring-2 focus:ring-emerald-500">
+                                                    <span class="text-slate-500 font-semibold" x-text="getItemUnit(rItem.itemId)"></span>
+                                                </div>
+                                            </td>
+                                            <td class="p-3 text-center">
+                                                <span x-show="Number(rItem.qtyReceived) === Number(rItem.qtyShipped)" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">Sesuai</span>
+                                                <span x-show="Number(rItem.qtyReceived) !== Number(rItem.qtyShipped)" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">Selisih</span>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Catatan Penerimaan / Keterangan Selisih (Opsional)</label>
+                        <textarea x-model="receiveDiscrepancyNotes" rows="2" placeholder="Isi catatan jika ada kemasan rusak, kurang timbangan, atau keterangan tambahan..." class="w-full border border-slate-300 rounded-xl p-2.5 bg-slate-50 font-medium"></textarea>
+                    </div>
+                </div>
+            </template>
+            <div class="bg-slate-50 px-6 py-4 border-t border-slate-200 flex justify-end gap-3">
+                <button @click="showReceiveModal = false" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-300 transition">Batal</button>
+                <button @click="confirmGoodsReceipt()" :disabled="isSavingReceipt" class="px-5 py-2.5 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 shadow flex items-center gap-2 transition disabled:opacity-50">
+                    <i class="fa-solid fa-circle-check"></i>
+                    <span x-text="isSavingReceipt ? 'Menyimpan...' : 'Konfirmasi Terima Barang'"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal Restock / Hasil Produksi Gudang CK -->
     <div x-show="showRestockModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" x-cloak>
-        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200">
             <div class="bg-emerald-800 text-white p-4 flex justify-between items-center">
                 <h3 class="font-bold text-base"><i class="fa-solid fa-fire-burner mr-2"></i> Catat Hasil Produksi / Restock CK</h3>
                 <button @click="showRestockModal = false" class="text-white hover:text-emerald-200 text-lg font-bold">&times;</button>
             </div>
-            <div class="p-6 space-y-4 text-xs">
+            <div class="p-6 space-y-4 text-xs max-h-[80vh] overflow-y-auto">
                 <div>
                     <label class="block font-semibold text-slate-700 mb-1">Pilih Bahan Baku / Produk Olahan</label>
-                    <select x-model="restockForm.itemId" class="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50 font-medium">
-                        <option value="">-- Pilih Bahan Baku --</option>
+                    <select x-model="restockForm.itemId" class="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50 font-bold">
+                        <option value="">-- Pilih Bahan Baku / Produk --</option>
                         <template x-for="inv in inventory" :key="inv.id">
                             <option :value="inv.id" x-text="inv.name + ' (Stok: ' + inv.stock + ' ' + inv.unit + ' | Buffer: ' + getItemMinBuffer(inv) + ')'"></option>
                         </template>
                     </select>
                 </div>
-                <div>
-                    <label class="block font-semibold text-slate-700 mb-1">Jumlah Hasil Produksi / Masuk Gudang</label>
-                    <input type="number" min="1" x-model.number="restockForm.qty" class="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50 font-bold">
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Jumlah Layak (Masuk Stok) <span class="text-red-600">*</span></label>
+                        <input type="number" min="0" x-model.number="restockForm.qty" class="w-full border border-emerald-300 rounded-lg p-2.5 bg-emerald-50/40 font-black text-emerald-900">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">No. Batch Produksi / Referensi</label>
+                        <input type="text" x-model="restockForm.refNo" placeholder="PROD-2026-001" class="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50 font-medium">
+                    </div>
                 </div>
-                <div>
-                    <label class="block font-semibold text-slate-700 mb-1">No. Batch Produksi / Referensi Supplier</label>
-                    <input type="text" x-model="restockForm.refNo" placeholder="PROD-2026-001 / SUP-001" class="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50 font-medium">
-                </div>
+
+                <!-- Menu Khusus Sampel & Reject (Aktif Otomatis untuk Produk Unggas: Broiler, Bebek, Pejantan Dada/Paha) -->
+                <template x-if="isSelectedRestockPoultry">
+                    <div class="bg-amber-50/90 border-2 border-amber-300 rounded-2xl p-4 space-y-3">
+                        <div class="flex items-center gap-2 text-amber-950 font-extrabold">
+                            <i class="fa-solid fa-drumstick-bite text-red-600"></i>
+                            <span>Input Khusus Produksi Unggas (Sampel & Reject)</span>
+                        </div>
+                        <p class="text-[11px] text-amber-900 leading-relaxed">
+                            Produk ini termasuk kategori potongan unggas khusus. Jumlah <b>Sampel</b> akan dicatat ke <i>Laporan Sampel (Bukan Stok)</i>, dan jumlah <b>Reject</b> otomatis masuk ke menu <i>Reject sesuai produknya</i>.
+                        </p>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block font-bold text-purple-800 mb-1"><i class="fa-solid fa-vial mr-1"></i> Jumlah Sampel (Non-Stok)</label>
+                                <input type="number" min="0" x-model.number="restockForm.sampleQty" class="w-full border border-purple-300 rounded-xl p-2.5 bg-white font-black text-purple-900 text-center">
+                            </div>
+                            <div>
+                                <label class="block font-bold text-rose-800 mb-1"><i class="fa-solid fa-ban mr-1"></i> Jumlah Reject (Rusak/BS)</label>
+                                <input type="number" min="0" x-model.number="restockForm.rejectQty" class="w-full border border-rose-300 rounded-xl p-2.5 bg-white font-black text-rose-900 text-center">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Keterangan Sampel / Alasan Reject</label>
+                            <input type="text" x-model="restockForm.qualityNotes" placeholder="Contoh: 1 sampel QC rasa, 2 reject memar/sobek..." class="w-full border border-slate-300 rounded-xl p-2 bg-white font-medium">
+                        </div>
+                    </div>
+                </template>
             </div>
             <div class="bg-slate-50 p-4 border-t border-slate-200 flex justify-end gap-3">
                 <button @click="showRestockModal = false" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-300">Batal</button>
-                <button @click="submitRestock()" class="px-5 py-2 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 shadow">Simpan ke Stok & Kartu Stok</button>
+                <button @click="submitRestock()" class="px-5 py-2 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 shadow">Simpan Hasil Produksi</button>
             </div>
         </div>
     </div>
 
-    <!-- Modal Catat Selesai Produksi Massal (Sesuai Item Terpilih) -->
-    <div x-show="showBatchProductionModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" x-cloak>
-        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden border border-slate-200">
-            <div class="bg-emerald-800 text-white p-4 flex justify-between items-center">
-                <h3 class="font-bold text-base"><i class="fa-solid fa-clipboard-check mr-2"></i> Catat Hasil Produksi Terpilih ke Stok CK</h3>
-                <button @click="showBatchProductionModal = false" class="text-white hover:text-emerald-200 text-lg font-bold">&times;</button>
-            </div>
-            <div class="p-6 space-y-4 max-h-[75vh] overflow-y-auto text-xs">
+    <!-- Modal Input Cepat Produksi Khusus Unggas (Broiler, Bebek, Pejantan Dada & Paha) -->
+    <div x-show="showPoultryProductionModal" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" x-cloak>
+        <div class="bg-white rounded-3xl shadow-2xl max-w-4xl w-full overflow-hidden border border-slate-200">
+            <div class="bg-gradient-to-r from-red-800 via-amber-800 to-slate-900 text-white px-6 py-4 flex justify-between items-center">
                 <div>
-                    <label class="block font-semibold text-slate-700 mb-1">No. Batch Produksi / Referensi Jadwal Dapur</label>
-                    <input type="text" x-model="batchProductionRef" class="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50 font-bold">
+                    <h3 class="font-bold text-base"><i class="fa-solid fa-drumstick-bite mr-2 text-amber-300"></i> Input Hasil Produksi Unggas (Layak, Sampel & Reject)</h3>
+                    <p class="text-[11px] text-amber-100">Broiler (Dada & Paha), Bebek (Dada & Paha), dan Pejantan (Dada & Paha)</p>
                 </div>
-                <div>
-                    <label class="block font-bold text-slate-700 mb-2">Daftar Item Sesuai Urutan Prioritas Produksi:</label>
-                    <table class="w-full text-left border-collapse border border-slate-200">
+                <button @click="showPoultryProductionModal = false" class="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center font-bold">&times;</button>
+            </div>
+            <div class="p-6 space-y-4 max-h-[78vh] overflow-y-auto text-xs">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">No. Batch Produksi Unggas</label>
+                        <input type="text" x-model="poultryBatchForm.batchNo" class="w-full border border-slate-300 rounded-xl p-2 bg-white font-mono font-bold">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Catatan Umum Produksi / QC</label>
+                        <input type="text" x-model="poultryBatchForm.generalNotes" placeholder="Contoh: Shift Pagi Central Kitchen..." class="w-full border border-slate-300 rounded-xl p-2 bg-white font-medium">
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto border border-slate-200 rounded-2xl">
+                    <table class="w-full text-left border-collapse">
                         <thead>
-                            <tr class="bg-slate-100 text-slate-600 border-b border-slate-200">
-                                <th class="p-2 text-center w-14">Prioritas</th>
-                                <th class="p-2">Nama Bahan Baku / Olahan</th>
-                                <th class="p-2 text-center">Stok Awal</th>
-                                <th class="p-2 text-center">Jumlah Jadi Diproduksi</th>
+                            <tr class="bg-slate-100 text-slate-700 border-b border-slate-200">
+                                <th class="p-3">Produk Unggas</th>
+                                <th class="p-3 text-center">Stok Saat Ini</th>
+                                <th class="p-3 text-center bg-emerald-50 text-emerald-900">Layak (Masuk Stok)</th>
+                                <th class="p-3 text-center bg-purple-50 text-purple-900">Sampel (Non-Stok)</th>
+                                <th class="p-3 text-center bg-rose-50 text-rose-900">Reject (Menu Reject)</th>
+                                <th class="p-3">Keterangan Reject / Sampel</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
-                            <template x-for="(bItem, idx) in batchProductionItems" :key="bItem.itemId">
-                                <tr>
-                                    <td class="p-2 text-center font-black text-emerald-700" x-text="'#' + (idx + 1)"></td>
-                                    <td class="p-2 font-bold text-slate-800" x-text="getItemName(bItem.itemId)"></td>
-                                    <td class="p-2 text-center text-slate-600" x-text="getItemStock(bItem.itemId) + ' ' + getItemUnit(bItem.itemId)"></td>
-                                    <td class="p-2 text-center">
-                                        <div class="inline-flex items-center gap-1">
-                                            <input type="number" min="1" x-model.number="bItem.qty" class="w-20 border border-slate-300 rounded-lg p-1.5 text-center font-bold bg-white">
-                                            <span class="text-slate-500 font-semibold" x-text="getItemUnit(bItem.itemId)"></span>
-                                        </div>
+                            <template x-for="pRow in poultryBatchForm.rows" :key="pRow.itemId">
+                                <tr class="hover:bg-slate-50">
+                                    <td class="p-3 font-extrabold text-slate-800" x-text="pRow.name"></td>
+                                    <td class="p-3 text-center font-semibold text-slate-500" x-text="getItemStock(pRow.itemId) + ' ' + pRow.unit"></td>
+                                    <td class="p-3 text-center bg-emerald-50/40">
+                                        <input type="number" min="0" x-model.number="pRow.goodQty" class="w-20 border border-emerald-300 rounded-xl p-1.5 text-center font-black text-emerald-900 bg-white">
+                                    </td>
+                                    <td class="p-3 text-center bg-purple-50/40">
+                                        <input type="number" min="0" x-model.number="pRow.sampleQty" class="w-20 border border-purple-300 rounded-xl p-1.5 text-center font-black text-purple-900 bg-white">
+                                    </td>
+                                    <td class="p-3 text-center bg-rose-50/40">
+                                        <input type="number" min="0" x-model.number="pRow.rejectQty" class="w-20 border border-rose-300 rounded-xl p-1.5 text-center font-black text-rose-900 bg-white">
+                                    </td>
+                                    <td class="p-3">
+                                        <input type="text" x-model="pRow.notes" placeholder="Alasan reject / sampel..." class="w-full min-w-[140px] border border-slate-300 rounded-xl p-1.5 bg-white">
                                     </td>
                                 </tr>
                             </template>
                         </tbody>
                     </table>
                 </div>
+
+                <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-[11px] text-blue-900 flex items-start gap-2">
+                    <i class="fa-solid fa-circle-info text-blue-600 mt-0.5"></i>
+                    <div>
+                        <b>Alur Otomatis:</b> Angka <b>Layak</b> otomatis menambah stok gudang & Kartu Stok. Angka <b>Sampel</b> masuk ke <i>Audit & Laporan &rarr; Laporan Sampel Produksi (Bukan Stok)</i>. Angka <b>Reject</b> otomatis masuk ke <i>Audit & Laporan &rarr; Reject (Per Produk)</i>.
+                    </div>
+                </div>
             </div>
-            <div class="bg-slate-50 p-4 border-t border-slate-200 flex justify-end gap-3">
-                <button @click="showBatchProductionModal = false" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-300">Batal</button>
-                <button @click="submitBatchProduction()" class="px-5 py-2 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 shadow">
-                    <i class="fa-solid fa-check-double mr-1"></i> Simpan Semua Hasil Produksi
+            <div class="bg-slate-50 px-6 py-4 border-t border-slate-200 flex justify-end gap-3">
+                <button @click="showPoultryProductionModal = false" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-300">Batal</button>
+                <button @click="submitPoultryProductionBatch()" class="px-6 py-2.5 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 shadow flex items-center gap-2">
+                    <i class="fa-solid fa-check-double"></i> Simpan Semua Hasil Produksi Unggas
                 </button>
             </div>
         </div>
@@ -1862,6 +2292,8 @@
 
                 currentRole: 'resto',
                 superAdminTab: 'locations',
+                auditSubTab: 'stockcard',
+                rejectProductFilter: '',
                 selectedOutletId: 'OUT-01',
                 isCloudConnected: false,
 
@@ -1894,12 +2326,13 @@
                     { id: 'OUT-02', name: 'Outlet Samuda - Bandung (Dago)', address: 'Jl. Ir. H. Juanda No. 112, Bandung', phone: '0812-3333-4444' },
                     { id: 'OUT-03', name: 'Outlet Samuda - Surabaya (Gubeng)', address: 'Jl. Raya Gubeng No. 78, Surabaya', phone: '0812-5555-6666' }
                 ],
-
-                categories: ['Bahan Baku Fresh', 'Sambal Base Olahan', 'Olahan Daging', 'Packaging'],
+                categories: ['Bahan Baku Fresh', 'Sambal Base Olahan', 'Olahan Daging', 'Olahan Unggas Khusus', 'Packaging'],
                 inventory: [],
                 pos: [],
                 deliveryNotes: [],
                 stockCardLogs: [],
+                rejectLogs: [],
+                sampleLogs: [],
 
                 db: null,
                 auth: null,
@@ -2097,10 +2530,13 @@
                             if (parsed.pos) this.pos = parsed.pos;
                             if (parsed.deliveryNotes) this.deliveryNotes = parsed.deliveryNotes;
                             if (parsed.stockCardLogs) this.stockCardLogs = parsed.stockCardLogs;
+                            if (parsed.rejectLogs) this.rejectLogs = parsed.rejectLogs;
+                            if (parsed.sampleLogs) this.sampleLogs = parsed.sampleLogs;
                             if (parsed.ckProfile) {
                                 this.ckProfile = parsed.ckProfile;
                                 this.ckProfileForm = { ...parsed.ckProfile };
                             }
+                            this.ensureSpecialPoultryItemsLocal();
                             return;
                         } catch (e) {}
                     }
@@ -2111,10 +2547,40 @@
                             { id: 'INV-03', sku: 'SKU-1003', name: 'Cabai Rawit Merah Segar', category: 'Bahan Baku Fresh', stock: 60, minStock: 20, unit: 'kg' },
                             { id: 'INV-04', sku: 'SKU-1004', name: 'Ayam Ungkep Bumbu Kuning', category: 'Olahan Daging', stock: 150, minStock: 40, unit: 'pack' },
                             { id: 'INV-05', sku: 'SKU-1005', name: 'Bebek Ungkep Rempah', category: 'Olahan Daging', stock: 80, minStock: 20, unit: 'pack' },
-                            { id: 'INV-06', sku: 'SKU-1006', name: 'Box Kemasan Takeaway Samuda', category: 'Packaging', stock: 500, minStock: 100, unit: 'pcs' }
+                            { id: 'INV-06', sku: 'SKU-1006', name: 'Box Kemasan Takeaway Samuda', category: 'Packaging', stock: 500, minStock: 100, unit: 'pcs' },
+                            { id: 'INV-UNG-01', sku: 'SKU-2001', name: 'Broiler Dada', category: 'Olahan Unggas Khusus', stock: 50, minStock: 15, unit: 'pcs' },
+                            { id: 'INV-UNG-02', sku: 'SKU-2002', name: 'Broiler Paha', category: 'Olahan Unggas Khusus', stock: 50, minStock: 15, unit: 'pcs' },
+                            { id: 'INV-UNG-03', sku: 'SKU-2003', name: 'Bebek Dada', category: 'Olahan Unggas Khusus', stock: 40, minStock: 10, unit: 'pcs' },
+                            { id: 'INV-UNG-04', sku: 'SKU-2004', name: 'Bebek Paha', category: 'Olahan Unggas Khusus', stock: 40, minStock: 10, unit: 'pcs' },
+                            { id: 'INV-UNG-05', sku: 'SKU-2005', name: 'Pejantan Dada', category: 'Olahan Unggas Khusus', stock: 40, minStock: 10, unit: 'pcs' },
+                            { id: 'INV-UNG-06', sku: 'SKU-2006', name: 'Pejantan Paha', category: 'Olahan Unggas Khusus', stock: 40, minStock: 10, unit: 'pcs' }
                         ];
                     }
                     this.saveLocalBackup();
+                },
+
+                ensureSpecialPoultryItemsLocal() {
+                    const specials = [
+                        { id: 'INV-UNG-01', sku: 'SKU-2001', name: 'Broiler Dada', category: 'Olahan Unggas Khusus', stock: 50, minStock: 15, unit: 'pcs' },
+                        { id: 'INV-UNG-02', sku: 'SKU-2002', name: 'Broiler Paha', category: 'Olahan Unggas Khusus', stock: 50, minStock: 15, unit: 'pcs' },
+                        { id: 'INV-UNG-03', sku: 'SKU-2003', name: 'Bebek Dada', category: 'Olahan Unggas Khusus', stock: 40, minStock: 10, unit: 'pcs' },
+                        { id: 'INV-UNG-04', sku: 'SKU-2004', name: 'Bebek Paha', category: 'Olahan Unggas Khusus', stock: 40, minStock: 10, unit: 'pcs' },
+                        { id: 'INV-UNG-05', sku: 'SKU-2005', name: 'Pejantan Dada', category: 'Olahan Unggas Khusus', stock: 40, minStock: 10, unit: 'pcs' },
+                        { id: 'INV-UNG-06', sku: 'SKU-2006', name: 'Pejantan Paha', category: 'Olahan Unggas Khusus', stock: 40, minStock: 10, unit: 'pcs' }
+                    ];
+                    let changed = false;
+                    for (const sp of specials) {
+                        const exists = this.inventory.some(i => i.id === sp.id || (i.name || '').toLowerCase() === sp.name.toLowerCase());
+                        if (!exists) {
+                            this.inventory.push(sp);
+                            changed = true;
+                        }
+                    }
+                    if (!this.categories.includes('Olahan Unggas Khusus')) {
+                        this.categories.push('Olahan Unggas Khusus');
+                        changed = true;
+                    }
+                    if (changed) this.saveLocalBackup();
                 },
 
                 saveLocalBackup() {
@@ -2126,6 +2592,8 @@
                             pos: this.pos,
                             deliveryNotes: this.deliveryNotes,
                             stockCardLogs: this.stockCardLogs,
+                            rejectLogs: this.rejectLogs,
+                            sampleLogs: this.sampleLogs,
                             ckProfile: this.ckProfile
                         }));
                     } catch (e) {}
@@ -2147,6 +2615,15 @@
 
                     try {
                         const invSnap = await fb.getDocs(this.getColRef('inventory'));
+                        const specialPoultryDefaults = [
+                            { id: 'INV-UNG-01', sku: 'SKU-2001', name: 'Broiler Dada', category: 'Olahan Unggas Khusus', stock: 50, minStock: 15, unit: 'pcs' },
+                            { id: 'INV-UNG-02', sku: 'SKU-2002', name: 'Broiler Paha', category: 'Olahan Unggas Khusus', stock: 50, minStock: 15, unit: 'pcs' },
+                            { id: 'INV-UNG-03', sku: 'SKU-2003', name: 'Bebek Dada', category: 'Olahan Unggas Khusus', stock: 40, minStock: 10, unit: 'pcs' },
+                            { id: 'INV-UNG-04', sku: 'SKU-2004', name: 'Bebek Paha', category: 'Olahan Unggas Khusus', stock: 40, minStock: 10, unit: 'pcs' },
+                            { id: 'INV-UNG-05', sku: 'SKU-2005', name: 'Pejantan Dada', category: 'Olahan Unggas Khusus', stock: 40, minStock: 10, unit: 'pcs' },
+                            { id: 'INV-UNG-06', sku: 'SKU-2006', name: 'Pejantan Paha', category: 'Olahan Unggas Khusus', stock: 40, minStock: 10, unit: 'pcs' }
+                        ];
+
                         if (invSnap.empty) {
                             const defaults = [
                                 { id: 'INV-01', sku: 'SKU-1001', name: 'Sambal Bawang Samuda (Base)', category: 'Sambal Base Olahan', stock: 120, minStock: 30, unit: 'kg' },
@@ -2154,10 +2631,19 @@
                                 { id: 'INV-03', sku: 'SKU-1003', name: 'Cabai Rawit Merah Segar', category: 'Bahan Baku Fresh', stock: 60, minStock: 20, unit: 'kg' },
                                 { id: 'INV-04', sku: 'SKU-1004', name: 'Ayam Ungkep Bumbu Kuning', category: 'Olahan Daging', stock: 150, minStock: 40, unit: 'pack' },
                                 { id: 'INV-05', sku: 'SKU-1005', name: 'Bebek Ungkep Rempah', category: 'Olahan Daging', stock: 80, minStock: 20, unit: 'pack' },
-                                { id: 'INV-06', sku: 'SKU-1006', name: 'Box Kemasan Takeaway Samuda', category: 'Packaging', stock: 500, minStock: 100, unit: 'pcs' }
+                                { id: 'INV-06', sku: 'SKU-1006', name: 'Box Kemasan Takeaway Samuda', category: 'Packaging', stock: 500, minStock: 100, unit: 'pcs' },
+                                ...specialPoultryDefaults
                             ];
                             for (const item of defaults) {
                                 await fb.setDoc(this.getDocRef('inventory', item.id), item);
+                            }
+                        } else {
+                            const existingNames = [];
+                            invSnap.forEach(d => existingNames.push((d.data().name || '').toLowerCase()));
+                            for (const sp of specialPoultryDefaults) {
+                                if (!existingNames.includes(sp.name.toLowerCase())) {
+                                    await fb.setDoc(this.getDocRef('inventory', sp.id), sp);
+                                }
                             }
                         }
 
@@ -2231,6 +2717,20 @@
                         this.saveLocalBackup();
                     }, onErr);
 
+                    fb.onSnapshot(this.getColRef('rejectLogs'), (snap) => {
+                        const list = [];
+                        snap.forEach(d => list.push(d.data()));
+                        this.rejectLogs = list.sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
+                        this.saveLocalBackup();
+                    }, onErr);
+
+                    fb.onSnapshot(this.getColRef('sampleLogs'), (snap) => {
+                        const list = [];
+                        snap.forEach(d => list.push(d.data()));
+                        this.sampleLogs = list.sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
+                        this.saveLocalBackup();
+                    }, onErr);
+
                     fb.onSnapshot(this.getDocRef('settings', 'ckProfile'), (docSnap) => {
                         if (docSnap.exists()) {
                             this.ckProfile = docSnap.data();
@@ -2268,6 +2768,7 @@
                 showReceiveModal: false,
                 showPODetailModal: false,
                 showRestockModal: false,
+                showPoultryProductionModal: false,
                 showBatchProductionModal: false,
                 showAddItemModal: false,
                 showEditItemModal: false,
@@ -2307,7 +2808,8 @@
                 receiveDiscrepancyNotes: '',
 
                 // Inventory & Category Forms
-                restockForm: { itemId: '', qty: 0, refNo: '' },
+                restockForm: { itemId: '', qty: 0, sampleQty: 0, rejectQty: 0, refNo: '', qualityNotes: '' },
+                poultryBatchForm: { batchNo: '', generalNotes: '', rows: [] },
                 newItemForm: { id: '', name: '', category: '', stock: 0, minStock: 10, unit: 'kg' },
                 isEditingItem: false,
                 newCategoryName: '',
@@ -2346,6 +2848,42 @@
                 // ================= COMPUTED GETTERS =================
                 get filteredRestoPOs() {
                     return (this.pos || []).filter(p => p.outletId === this.selectedOutletId);
+                },
+                isPoultrySpecialProduct(item) {
+                    if (!item) return false;
+                    const name = (item.name || '').toLowerCase();
+                    const isUnggas = name.includes('broiler') || name.includes('boliler') || name.includes('bebek') || name.includes('pejantan');
+                    const isPart = name.includes('dada') || name.includes('paha');
+                    return isUnggas && isPart;
+                },
+                get isSelectedRestockPoultry() {
+                    const item = (this.inventory || []).find(i => i.id === this.restockForm.itemId);
+                    return this.isPoultrySpecialProduct(item);
+                },
+                get specialPoultryInventoryItems() {
+                    return (this.inventory || []).filter(i => this.isPoultrySpecialProduct(i));
+                },
+                get totalRejectCount() {
+                    return (this.rejectLogs || []).reduce((acc, r) => acc + (Number(r.qty) || 0), 0);
+                },
+                get totalSampleCount() {
+                    return (this.sampleLogs || []).reduce((acc, s) => acc + (Number(s.qty) || 0), 0);
+                },
+                get rejectSummaryByProduct() {
+                    const map = {};
+                    for (const r of (this.rejectLogs || [])) {
+                        const key = r.itemName || r.itemId || 'Produk Lain';
+                        if (!map[key]) {
+                            map[key] = { itemName: key, totalQty: 0, unit: r.unit || 'pcs', count: 0 };
+                        }
+                        map[key].totalQty += (Number(r.qty) || 0);
+                        map[key].count += 1;
+                    }
+                    return Object.values(map).sort((a, b) => b.totalQty - a.totalQty);
+                },
+                get filteredRejectLogs() {
+                    if (!this.rejectProductFilter) return this.rejectLogs || [];
+                    return (this.rejectLogs || []).filter(r => r.itemName === this.rejectProductFilter);
                 },
                 get incomingShipmentsForResto() {
                     return (this.deliveryNotes || []).filter(sj => sj.outletId === this.selectedOutletId);
@@ -3011,48 +3549,231 @@
                     this.restockForm = {
                         itemId: this.inventory[0]?.id || '',
                         qty: 1,
-                        refNo: 'SUP-' + new Date().getFullYear() + '-' + Math.floor(100 + Math.random() * 900)
+                        sampleQty: 0,
+                        rejectQty: 0,
+                        refNo: 'PROD-' + new Date().toISOString().split('T')[0].replace(/-/g, '') + '-' + Math.floor(100 + Math.random() * 900),
+                        qualityNotes: ''
                     };
                     this.showRestockModal = true;
                 },
+                openPoultryProductionModal() {
+                    const dateStr = new Date().toISOString().split('T')[0].replace(/-/g, '');
+                    const poultryItems = this.specialPoultryInventoryItems;
+                    this.poultryBatchForm = {
+                        batchNo: 'PROD-UNGGAS-' + dateStr + '-' + Math.floor(100 + Math.random() * 900),
+                        generalNotes: '',
+                        rows: poultryItems.map(item => ({
+                            itemId: item.id,
+                            name: item.name,
+                            unit: item.unit || 'pcs',
+                            goodQty: 0,
+                            sampleQty: 0,
+                            rejectQty: 0,
+                            notes: ''
+                        }))
+                    };
+                    this.showPoultryProductionModal = true;
+                },
+                async recordSampleAndRejectEntry(item, batchNo, sampleQty, rejectQty, notes) {
+                    const fb = window.firebaseModules;
+                    const nowIso = new Date().toISOString();
+
+                    if (sampleQty > 0) {
+                        const smpId = 'SMP-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+                        const smpEntry = {
+                            id: smpId,
+                            timestamp: nowIso,
+                            batchNo: batchNo,
+                            itemId: item.id,
+                            itemName: item.name,
+                            qty: sampleQty,
+                            unit: item.unit || 'pcs',
+                            notes: notes || 'Sampel QC Produksi (Bukan Stok)'
+                        };
+                        this.sampleLogs.unshift(smpEntry);
+                        if (this.isCloudConnected && this.db) {
+                            await fb.setDoc(this.getDocRef('sampleLogs', smpId), smpEntry).catch(e => this.handleFirestorePermissionError(e));
+                        }
+                    }
+
+                    if (rejectQty > 0) {
+                        const rejId = 'REJ-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+                        const rejEntry = {
+                            id: rejId,
+                            timestamp: nowIso,
+                            batchNo: batchNo,
+                            itemId: item.id,
+                            itemName: item.name,
+                            qty: rejectQty,
+                            unit: item.unit || 'pcs',
+                            notes: notes || 'Reject Hasil Produksi'
+                        };
+                        this.rejectLogs.unshift(rejEntry);
+                        if (this.isCloudConnected && this.db) {
+                            await fb.setDoc(this.getDocRef('rejectLogs', rejId), rejEntry).catch(e => this.handleFirestorePermissionError(e));
+                        }
+                    }
+                },
                 async submitRestock() {
-                    const qty = Number(this.restockForm.qty);
-                    if (!this.restockForm.itemId || isNaN(qty) || qty <= 0) {
-                        this.notify('Pilih bahan baku dan masukkan jumlah masuk yang valid!');
+                    const goodQty = Math.max(0, Number(this.restockForm.qty) || 0);
+                    const sampleQty = this.isSelectedRestockPoultry ? Math.max(0, Number(this.restockForm.sampleQty) || 0) : 0;
+                    const rejectQty = this.isSelectedRestockPoultry ? Math.max(0, Number(this.restockForm.rejectQty) || 0) : 0;
+
+                    if (!this.restockForm.itemId || (goodQty <= 0 && sampleQty <= 0 && rejectQty <= 0)) {
+                        this.notify('Pilih produk dan masukkan minimal 1 jumlah (Layak, Sampel, atau Reject)!');
                         return;
                     }
                     const item = this.inventory.find(i => i.id === this.restockForm.itemId);
                     if (!item) return;
 
-                    const newStock = (Number(item.stock) || 0) + qty;
-                    item.stock = newStock;
                     const fb = window.firebaseModules;
+                    const batchNo = (this.restockForm.refNo && this.restockForm.refNo.trim()) ? this.restockForm.refNo.trim() : 'Produksi CK';
 
-                    const logId = 'LOG-' + Date.now();
-                    const logEntry = {
-                        id: logId,
-                        timestamp: new Date().toISOString(),
-                        itemId: item.id,
-                        itemName: item.name,
-                        type: 'IN_RESTOCK',
-                        qty: qty,
-                        balanceAfter: newStock,
-                        unit: item.unit,
-                        refNo: (this.restockForm.refNo && this.restockForm.refNo.trim()) ? this.restockForm.refNo.trim() : 'Restock Gudang CK'
-                    };
-                    this.stockCardLogs.unshift(logEntry);
-                    this.saveLocalBackup();
+                    if (goodQty > 0) {
+                        const newStock = (Number(item.stock) || 0) + goodQty;
+                        item.stock = newStock;
 
-                    if (this.isCloudConnected && this.db) {
-                        await fb.updateDoc(this.getDocRef('inventory', item.id), {
-                            stock: newStock
-                        }).catch(e => this.handleFirestorePermissionError(e));
+                        const logId = 'LOG-' + Date.now();
+                        const logEntry = {
+                            id: logId,
+                            timestamp: new Date().toISOString(),
+                            itemId: item.id,
+                            itemName: item.name,
+                            type: 'IN_RESTOCK',
+                            qty: goodQty,
+                            balanceAfter: newStock,
+                            unit: item.unit,
+                            refNo: batchNo
+                        };
+                        this.stockCardLogs.unshift(logEntry);
 
-                        await fb.setDoc(this.getDocRef('stockCardLogs', logId), logEntry).catch(e => this.handleFirestorePermissionError(e));
+                        if (this.isCloudConnected && this.db) {
+                            await fb.updateDoc(this.getDocRef('inventory', item.id), {
+                                stock: newStock
+                            }).catch(e => this.handleFirestorePermissionError(e));
+
+                            await fb.setDoc(this.getDocRef('stockCardLogs', logId), logEntry).catch(e => this.handleFirestorePermissionError(e));
+                        }
                     }
 
+                    if (sampleQty > 0 || rejectQty > 0) {
+                        await this.recordSampleAndRejectEntry(item, batchNo, sampleQty, rejectQty, this.restockForm.qualityNotes);
+                    }
+
+                    this.saveLocalBackup();
                     this.showRestockModal = false;
-                    this.notify('Restock ' + item.name + ' (+' + qty + ' ' + item.unit + ') berhasil disimpan!');
+
+                    let infoParts = [];
+                    if (goodQty > 0) infoParts.push('+' + goodQty + ' stok');
+                    if (sampleQty > 0) infoParts.push(sampleQty + ' sampel (non-stok)');
+                    if (rejectQty > 0) infoParts.push(rejectQty + ' reject');
+                    this.notify('Hasil produksi ' + item.name + ' (' + infoParts.join(', ') + ') berhasil disimpan!');
+                },
+                async submitPoultryProductionBatch() {
+                    const rows = this.poultryBatchForm.rows || [];
+                    const hasAnyInput = rows.some(r => (Number(r.goodQty) || 0) > 0 || (Number(r.sampleQty) || 0) > 0 || (Number(r.rejectQty) || 0) > 0);
+                    if (!hasAnyInput) {
+                        this.notify('Masukkan minimal 1 angka pada kolom Layak, Sampel, atau Reject!');
+                        return;
+                    }
+
+                    const fb = window.firebaseModules;
+                    const batchNo = (this.poultryBatchForm.batchNo || '').trim() || ('PROD-UNGGAS-' + Date.now());
+                    const genNote = (this.poultryBatchForm.generalNotes || '').trim();
+                    let totalGood = 0;
+                    let totalSample = 0;
+                    let totalReject = 0;
+
+                    for (const row of rows) {
+                        const goodQty = Math.max(0, Number(row.goodQty) || 0);
+                        const sampleQty = Math.max(0, Number(row.sampleQty) || 0);
+                        const rejectQty = Math.max(0, Number(row.rejectQty) || 0);
+                        if (goodQty === 0 && sampleQty === 0 && rejectQty === 0) continue;
+
+                        const item = this.inventory.find(i => i.id === row.itemId);
+                        if (!item) continue;
+
+                        const combinedNote = [row.notes, genNote].filter(Boolean).join(' - ');
+
+                        if (goodQty > 0) {
+                            totalGood += goodQty;
+                            const newStock = (Number(item.stock) || 0) + goodQty;
+                            item.stock = newStock;
+
+                            const logId = 'LOG-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+                            const logEntry = {
+                                id: logId,
+                                timestamp: new Date().toISOString(),
+                                itemId: item.id,
+                                itemName: item.name,
+                                type: 'IN_PRODUCTION',
+                                qty: goodQty,
+                                balanceAfter: newStock,
+                                unit: item.unit,
+                                refNo: batchNo
+                            };
+                            this.stockCardLogs.unshift(logEntry);
+
+                            if (this.isCloudConnected && this.db) {
+                                await fb.updateDoc(this.getDocRef('inventory', item.id), { stock: newStock }).catch(e => this.handleFirestorePermissionError(e));
+                                await fb.setDoc(this.getDocRef('stockCardLogs', logId), logEntry).catch(e => this.handleFirestorePermissionError(e));
+                            }
+                        }
+
+                        if (sampleQty > 0 || rejectQty > 0) {
+                            totalSample += sampleQty;
+                            totalReject += rejectQty;
+                            await this.recordSampleAndRejectEntry(item, batchNo, sampleQty, rejectQty, combinedNote);
+                        }
+                    }
+
+                    this.saveLocalBackup();
+                    this.showPoultryProductionModal = false;
+                    this.notify(`Produksi Unggas tersimpan: ${totalGood} masuk stok, ${totalSample} sampel (laporan terpisah), ${totalReject} masuk menu Reject.`);
+                },
+                async deleteRejectLog(id) {
+                    this.rejectLogs = this.rejectLogs.filter(r => r.id !== id);
+                    this.saveLocalBackup();
+                    if (this.isCloudConnected && this.db) {
+                        const fb = window.firebaseModules;
+                        await fb.deleteDoc(this.getDocRef('rejectLogs', id)).catch(e => this.handleFirestorePermissionError(e));
+                    }
+                    this.notify('Catatan reject dihapus.');
+                },
+                async deleteSampleLog(id) {
+                    this.sampleLogs = this.sampleLogs.filter(s => s.id !== id);
+                    this.saveLocalBackup();
+                    if (this.isCloudConnected && this.db) {
+                        const fb = window.firebaseModules;
+                        await fb.deleteDoc(this.getDocRef('sampleLogs', id)).catch(e => this.handleFirestorePermissionError(e));
+                    }
+                    this.notify('Laporan sampel dihapus.');
+                },
+                printSampleReport() {
+                    if (!this.sampleLogs || this.sampleLogs.length === 0) {
+                        this.notify('Belum ada data sampel produksi untuk dicetak.');
+                        return;
+                    }
+                    this.isPrintingChecklist = false;
+                    this.isPrintingProductionPlan = true;
+                    const todayCode = new Date().toISOString().split('T')[0].replace(/-/g, '');
+                    this.selectedSJForPrint = {
+                        id: 'LAP-SAMPEL-' + todayCode,
+                        poId: 'LAPORAN SAMPEL PRODUKSI (NON-STOK)',
+                        outletId: 'Quality Control Central Kitchen',
+                        courierType: 'Internal QC',
+                        driverName: 'Tim QC Dapur',
+                        plateOrResi: 'Tidak Mempengaruhi Saldo Stok Gudang',
+                        senderName: 'Kepala Produksi CK',
+                        receiverName: 'Tim Audit & Manajemen',
+                        dispatchTime: new Date().toISOString(),
+                        items: this.sampleLogs.map(s => ({
+                            itemId: s.itemId,
+                            qtyShipped: s.qty,
+                            note: 'Batch: ' + s.batchNo + (s.notes ? ' • ' + s.notes : '')
+                        }))
+                    };
+                    this.showPrintSJModal = true;
                 },
 
                 async quickAdjustStock(item, delta) {
