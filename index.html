@@ -597,7 +597,7 @@
                                     <i class="fa-solid fa-plus mr-1"></i> Produksi / Restock
                                 </button>
                                 <button @click="openPoultryProductionModal()" class="bg-amber-400 text-slate-950 hover:bg-amber-300 px-3 py-2 rounded-xl text-xs font-extrabold shadow transition active:scale-95">
-                                    <i class="fa-solid fa-drumstick-bite mr-1"></i> Unggas (Sampel & Reject)
+                                    <i class="fa-solid fa-drumstick-bite mr-1"></i> Produksi Unggas (Dada/Paha, Sampel & Reject)
                                 </button>
                             </div>
                         </div>
@@ -1324,75 +1324,98 @@
                     </div>
                 </div>
 
-                <!-- TAB 2 SUPER ADMIN: MASTER PRODUK & KATEGORI -->
-                <div x-show="superAdminTab === 'inventory'" class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                    <div class="p-4 border-b border-slate-100 bg-slate-50 flex flex-wrap justify-between items-center gap-2">
-                        <h3 class="font-bold text-slate-800 text-sm"><i class="fa-solid fa-boxes-stacked text-red-600 mr-2"></i> Master Data Produk SKU & Kategori</h3>
-                        <div class="flex gap-2">
-                            <button @click="openCategoryModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold"><i class="fa-solid fa-tags mr-1"></i> Kelola Kategori</button>
-                            <button @click="openAddItemModal()" class="bg-slate-800 hover:bg-slate-900 text-white px-3 py-1.5 rounded-xl text-xs font-bold"><i class="fa-solid fa-plus mr-1"></i> Tambah Produk SKU</button>
+                <!-- TAB 2 SUPER ADMIN: MASTER PRODUK & KATEGORI (TERMASUK HAPUS PRODUK) -->
+                <div x-show="superAdminTab === 'inventory'" class="space-y-6">
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                        <div class="p-4 border-b border-slate-100 bg-slate-50 flex flex-wrap justify-between items-center gap-2">
+                            <div>
+                                <h3 class="font-bold text-slate-800 text-sm"><i class="fa-solid fa-boxes-stacked text-red-600 mr-2"></i> Master Produk SKU & Penghapusan Item</h3>
+                                <p class="text-[11px] text-slate-500">Tambah, ubah, atau hapus permanen SKU bahan baku & produk di Central Kitchen</p>
+                            </div>
+                            <div class="flex flex-wrap gap-2">
+                                <button @click="openCategoryModal()" class="bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 px-3 py-1.5 rounded-xl text-xs font-bold transition">
+                                    <i class="fa-solid fa-tags mr-1"></i> Kelola Kategori
+                                </button>
+                                <button @click="openAddItemModal()" class="bg-slate-900 hover:bg-slate-800 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold shadow transition">
+                                    <i class="fa-solid fa-plus mr-1"></i> Tambah Produk SKU
+                                </button>
+                            </div>
                         </div>
-                    </div>
-                    <div class="p-4 overflow-x-auto">
-                        <table class="w-full text-left text-xs">
-                            <thead>
-                                <tr class="text-slate-500 border-b border-slate-100">
-                                    <th class="pb-2.5">SKU</th>
-                                    <th class="pb-2.5">Nama Produk</th>
-                                    <th class="pb-2.5">Kategori</th>
-                                    <th class="pb-2.5 text-center">Stok Saat Ini</th>
-                                    <th class="pb-2.5 text-center">Buffer Min.</th>
-                                    <th class="pb-2.5 text-right">Aksi Master</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-100">
-                                <template x-for="inv in inventory" :key="inv.id">
-                                    <tr class="hover:bg-slate-50">
-                                        <td class="py-3 font-mono text-slate-500" x-text="inv.sku || inv.id"></td>
-                                        <td class="py-3 font-bold text-slate-800" x-text="inv.name"></td>
-                                        <td class="py-3 text-slate-600" x-text="inv.category"></td>
-                                        <td class="py-3 text-center font-bold text-emerald-700" x-text="inv.stock + ' ' + inv.unit"></td>
-                                        <td class="py-3 text-center text-slate-600" x-text="inv.minStock + ' ' + inv.unit"></td>
-                                        <td class="py-3 text-right space-x-1">
-                                            <button @click="openEditItemModal(inv)" class="bg-blue-50 text-blue-600 hover:bg-blue-100 px-2.5 py-1 rounded-lg font-bold"><i class="fa-solid fa-pen"></i> Edit</button>
-                                            <button @click="deleteInventoryItem(inv.id)" class="bg-rose-50 text-rose-600 hover:bg-rose-100 px-2.5 py-1 rounded-lg font-bold"><i class="fa-solid fa-trash"></i> Hapus</button>
-                                        </td>
+                        <div class="p-4 overflow-x-auto">
+                            <table class="w-full text-left text-xs">
+                                <thead>
+                                    <tr class="text-slate-500 border-b border-slate-100">
+                                        <th class="pb-3">SKU / ID</th>
+                                        <th class="pb-3">Nama Produk / Bahan Baku</th>
+                                        <th class="pb-3">Kategori</th>
+                                        <th class="pb-3 text-center">Stok Saat Ini</th>
+                                        <th class="pb-3 text-center">Buffer Min.</th>
+                                        <th class="pb-3 text-right">Aksi Master</th>
                                     </tr>
-                                </template>
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100">
+                                    <template x-if="inventory.length === 0">
+                                        <tr><td colspan="6" class="py-6 text-center text-slate-400 italic">Belum ada data produk SKU.</td></tr>
+                                    </template>
+                                    <template x-for="item in inventory" :key="item.id">
+                                        <tr class="hover:bg-slate-50">
+                                            <td class="py-3 font-mono font-bold text-slate-500" x-text="item.sku || item.id"></td>
+                                            <td class="py-3 font-bold text-slate-800" x-text="item.name"></td>
+                                            <td class="py-3">
+                                                <span class="bg-slate-100 text-slate-700 px-2.5 py-0.5 rounded-lg font-semibold text-[11px]" x-text="item.category"></span>
+                                            </td>
+                                            <td class="py-3 text-center font-extrabold text-slate-800" x-text="item.stock + ' ' + item.unit"></td>
+                                            <td class="py-3 text-center text-slate-500" x-text="getItemMinBuffer(item) + ' ' + item.unit"></td>
+                                            <td class="py-3 text-right space-x-1.5 whitespace-nowrap">
+                                                <button @click="openEditItemModal(item)" class="bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 px-2.5 py-1 rounded-lg font-bold transition">
+                                                    <i class="fa-solid fa-pen mr-1"></i> Edit
+                                                </button>
+                                                <button @click="confirmDeleteInventoryItem(item)" class="bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 px-2.5 py-1 rounded-lg font-bold transition">
+                                                    <i class="fa-solid fa-trash mr-1"></i> Hapus Produk
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
 
                 <!-- TAB 3 SUPER ADMIN: SEMUA PO & SURAT JALAN -->
-                <div x-show="superAdminTab === 'transactions'" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <!-- Master PO -->
+                <div x-show="superAdminTab === 'transactions'" class="space-y-6">
+                    <!-- Semua PO -->
                     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                         <div class="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
-                            <h3 class="font-bold text-slate-800 text-sm"><i class="fa-solid fa-file-invoice text-red-600 mr-2"></i> Master Seluruh Purchase Order (PO)</h3>
-                            <span class="text-xs bg-slate-200 text-slate-700 px-2 py-0.5 rounded font-bold" x-text="pos.length + ' PO'"></span>
+                            <h3 class="font-bold text-slate-800 text-sm"><i class="fa-solid fa-file-invoice text-red-600 mr-2"></i> Seluruh Data Purchase Order (PO)</h3>
+                            <span class="text-xs bg-slate-200 text-slate-700 px-2.5 py-0.5 rounded-full font-bold" x-text="pos.length + ' PO'"></span>
                         </div>
-                        <div class="p-4 overflow-x-auto max-h-[500px]">
+                        <div class="p-4 overflow-x-auto">
                             <table class="w-full text-left text-xs">
                                 <thead>
                                     <tr class="text-slate-500 border-b border-slate-100">
-                                        <th class="pb-2">No. PO</th>
-                                        <th class="pb-2">Outlet</th>
-                                        <th class="pb-2">Status</th>
-                                        <th class="pb-2 text-right">Kontrol Admin</th>
+                                        <th class="pb-2.5">No. PO</th>
+                                        <th class="pb-2.5">Outlet</th>
+                                        <th class="pb-2.5">Target Kirim</th>
+                                        <th class="pb-2.5">Status</th>
+                                        <th class="pb-2.5 text-right">Aksi Super Admin</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-slate-100">
+                                    <template x-if="pos.length === 0">
+                                        <tr><td colspan="5" class="py-6 text-center text-slate-400 italic">Belum ada data PO.</td></tr>
+                                    </template>
                                     <template x-for="po in pos" :key="po.id">
-                                        <tr>
-                                            <td class="py-2.5 font-bold text-slate-800" x-text="po.id"></td>
-                                            <td class="py-2.5 text-slate-600" x-text="getOutletName(po.outletId)"></td>
-                                            <td class="py-2.5">
+                                        <tr class="hover:bg-slate-50">
+                                            <td class="py-3 font-bold text-slate-800" x-text="po.id"></td>
+                                            <td class="py-3 text-slate-700" x-text="getOutletName(po.outletId)"></td>
+                                            <td class="py-3 text-slate-600" x-text="formatDate(po.targetDate)"></td>
+                                            <td class="py-3">
                                                 <span class="px-2 py-0.5 rounded-full text-[10px] font-bold" :class="getStatusBadgeClass(po.status)" x-text="getStatusLabel(po.status)"></span>
                                             </td>
-                                            <td class="py-2.5 text-right space-x-1 whitespace-nowrap">
-                                                <button @click="openSuperAdminEditPO(po)" class="bg-blue-50 text-blue-600 hover:bg-blue-100 px-2 py-1 rounded font-bold"><i class="fa-solid fa-pen"></i> Edit</button>
-                                                <button @click="deletePO(po.id)" class="bg-rose-50 text-rose-600 hover:bg-rose-100 px-2 py-1 rounded font-bold"><i class="fa-solid fa-trash"></i> Hapus</button>
+                                            <td class="py-3 text-right space-x-1 whitespace-nowrap">
+                                                <button @click="openSuperAdminEditPO(po)" class="bg-blue-50 text-blue-700 hover:bg-blue-100 px-2.5 py-1 rounded-lg font-bold"><i class="fa-solid fa-pen"></i> Edit</button>
+                                                <button @click="confirmDeletePO(po)" class="bg-rose-50 text-rose-700 hover:bg-rose-100 px-2.5 py-1 rounded-lg font-bold"><i class="fa-solid fa-trash"></i> Hapus</button>
                                             </td>
                                         </tr>
                                     </template>
@@ -1401,34 +1424,39 @@
                         </div>
                     </div>
 
-                    <!-- Master Surat Jalan -->
+                    <!-- Semua Surat Jalan -->
                     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                         <div class="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
-                            <h3 class="font-bold text-slate-800 text-sm"><i class="fa-solid fa-truck-fast text-red-600 mr-2"></i> Master Seluruh Surat Jalan</h3>
-                            <span class="text-xs bg-slate-200 text-slate-700 px-2 py-0.5 rounded font-bold" x-text="deliveryNotes.length + ' SJ'"></span>
+                            <h3 class="font-bold text-slate-800 text-sm"><i class="fa-solid fa-truck-fast text-red-600 mr-2"></i> Seluruh Data Surat Jalan</h3>
+                            <span class="text-xs bg-slate-200 text-slate-700 px-2.5 py-0.5 rounded-full font-bold" x-text="deliveryNotes.length + ' SJ'"></span>
                         </div>
-                        <div class="p-4 overflow-x-auto max-h-[500px]">
+                        <div class="p-4 overflow-x-auto">
                             <table class="w-full text-left text-xs">
                                 <thead>
                                     <tr class="text-slate-500 border-b border-slate-100">
-                                        <th class="pb-2">No. SJ</th>
-                                        <th class="pb-2">Tujuan Outlet</th>
-                                        <th class="pb-2">Status</th>
-                                        <th class="pb-2 text-right">Kontrol Admin</th>
+                                        <th class="pb-2.5">No. SJ</th>
+                                        <th class="pb-2.5">Ref PO</th>
+                                        <th class="pb-2.5">Outlet Tujuan</th>
+                                        <th class="pb-2.5">Status</th>
+                                        <th class="pb-2.5 text-right">Aksi Super Admin</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-slate-100">
+                                    <template x-if="deliveryNotes.length === 0">
+                                        <tr><td colspan="5" class="py-6 text-center text-slate-400 italic">Belum ada data Surat Jalan.</td></tr>
+                                    </template>
                                     <template x-for="sj in deliveryNotes" :key="sj.id">
-                                        <tr>
-                                            <td class="py-2.5 font-bold text-slate-800" x-text="sj.id"></td>
-                                            <td class="py-2.5 text-slate-600" x-text="getOutletName(sj.outletId)"></td>
-                                            <td class="py-2.5">
+                                        <tr class="hover:bg-slate-50">
+                                            <td class="py-3 font-bold text-slate-800" x-text="sj.id"></td>
+                                            <td class="py-3 font-mono text-slate-600" x-text="sj.poId"></td>
+                                            <td class="py-3 text-slate-700" x-text="getOutletName(sj.outletId)"></td>
+                                            <td class="py-3">
                                                 <span class="px-2 py-0.5 rounded-full text-[10px] font-bold" :class="getSJStatusBadgeClass(sj.status)" x-text="getSJStatusLabel(sj.status)"></span>
                                             </td>
-                                            <td class="py-2.5 text-right space-x-1 whitespace-nowrap">
-                                                <button @click="openPrintSJModal(sj)" class="bg-slate-100 text-slate-700 hover:bg-slate-200 px-2 py-1 rounded font-bold"><i class="fa-solid fa-print"></i></button>
-                                                <button @click="openSuperAdminEditSJ(sj)" class="bg-blue-50 text-blue-600 hover:bg-blue-100 px-2 py-1 rounded font-bold"><i class="fa-solid fa-pen"></i> Edit</button>
-                                                <button @click="deleteSJ(sj.id)" class="bg-rose-50 text-rose-600 hover:bg-rose-100 px-2 py-1 rounded font-bold"><i class="fa-solid fa-trash"></i> Hapus</button>
+                                            <td class="py-3 text-right space-x-1 whitespace-nowrap">
+                                                <button @click="openPrintSJModal(sj)" class="bg-slate-100 text-slate-700 hover:bg-slate-200 px-2.5 py-1 rounded-lg font-bold"><i class="fa-solid fa-print"></i></button>
+                                                <button @click="openSuperAdminEditSJ(sj)" class="bg-blue-50 text-blue-700 hover:bg-blue-100 px-2.5 py-1 rounded-lg font-bold"><i class="fa-solid fa-pen"></i> Edit</button>
+                                                <button @click="confirmDeleteSJ(sj)" class="bg-rose-50 text-rose-700 hover:bg-rose-100 px-2.5 py-1 rounded-lg font-bold"><i class="fa-solid fa-trash"></i> Hapus</button>
                                             </td>
                                         </tr>
                                     </template>
@@ -1438,102 +1466,92 @@
                     </div>
                 </div>
 
-                <!-- TAB 4 SUPER ADMIN: PENGATURAN PIN LOGIN & HAK AKSES -->
-                <div x-show="superAdminTab === 'security'" class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden max-w-3xl">
-                    <div class="p-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
-                        <div>
-                            <h3 class="font-bold text-slate-800 text-sm"><i class="fa-solid fa-shield-halved text-red-600 mr-2"></i> Pengaturan PIN Login Per Divisi (Tersinkronisasi Cloud)</h3>
-                            <p class="text-[11px] text-slate-500">Ubah PIN akses untuk masing-masing bagian sebelum membagikan aplikasi ke tim Outlet maupun Central Kitchen.</p>
-                        </div>
+                <!-- TAB 4 SUPER ADMIN: KEAMANAN & PIN LOGIN -->
+                <div x-show="superAdminTab === 'security'" class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden max-w-2xl">
+                    <div class="p-4 border-b border-slate-100 bg-slate-50">
+                        <h3 class="font-bold text-slate-800 text-sm"><i class="fa-solid fa-shield-halved text-amber-500 mr-2"></i> Pengaturan PIN Akses Bagian (Login)</h3>
+                        <p class="text-[11px] text-slate-500 mt-0.5">Ubah PIN masuk untuk masing-masing bagian. Tersinkronisasi langsung ke Firebase Cloud.</p>
                     </div>
-                    <div class="p-6 space-y-5 text-xs">
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200">
-                                <div class="flex items-center gap-2 mb-2 text-red-700 font-bold">
-                                    <i class="fa-solid fa-store"></i>
-                                    <span>PIN Admin Resto</span>
-                                </div>
-                                <p class="text-[11px] text-slate-500 mb-3">Hanya dapat melihat menu Admin Resto (PO & Terima Barang).</p>
-                                <input type="text" x-model="pinForm.resto" maxlength="12" placeholder="Contoh: 1111" class="w-full border border-slate-300 rounded-xl p-2.5 bg-white font-mono text-sm font-black tracking-widest text-center">
+                    <div class="p-6 space-y-4 text-xs">
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block font-bold text-slate-700 mb-1">PIN Admin Resto</label>
+                                <input type="text" x-model="pinForm.resto" class="w-full border border-slate-300 rounded-xl p-2.5 font-mono font-bold text-center bg-slate-50">
                             </div>
-
-                            <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200">
-                                <div class="flex items-center gap-2 mb-2 text-blue-700 font-bold">
-                                    <i class="fa-solid fa-industry"></i>
-                                    <span>PIN Central Kitchen</span>
-                                </div>
-                                <p class="text-[11px] text-slate-500 mb-3">Dapat melihat menu Central Kitchen & Audit Laporan.</p>
-                                <input type="text" x-model="pinForm.ck" maxlength="12" placeholder="Contoh: 2222" class="w-full border border-slate-300 rounded-xl p-2.5 bg-white font-mono text-sm font-black tracking-widest text-center">
+                            <div>
+                                <label class="block font-bold text-slate-700 mb-1">PIN Central Kitchen</label>
+                                <input type="text" x-model="pinForm.ck" class="w-full border border-slate-300 rounded-xl p-2.5 font-mono font-bold text-center bg-slate-50">
                             </div>
-
-                            <div class="bg-amber-50/70 p-4 rounded-2xl border border-amber-200">
-                                <div class="flex items-center gap-2 mb-2 text-amber-800 font-bold">
-                                    <i class="fa-solid fa-crown"></i>
-                                    <span>PIN Super Admin</span>
-                                </div>
-                                <p class="text-[11px] text-slate-600 mb-3">Akses penuh ke semua menu, edit/hapus data & pengaturan PIN.</p>
-                                <input type="text" x-model="pinForm.superadmin" maxlength="12" placeholder="Contoh: 9999" class="w-full border border-amber-300 rounded-xl p-2.5 bg-white font-mono text-sm font-black tracking-widest text-center">
+                            <div>
+                                <label class="block font-bold text-slate-700 mb-1">PIN Super Admin</label>
+                                <input type="text" x-model="pinForm.superadmin" class="w-full border border-slate-300 rounded-xl p-2.5 font-mono font-bold text-center bg-amber-50">
                             </div>
                         </div>
-
-                        <div class="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100">
-                            <p class="text-[11px] text-slate-500"><i class="fa-solid fa-circle-info text-blue-600 mr-1"></i> Perubahan PIN langsung berlaku di semua perangkat yang terhubung.</p>
-                            <button @click="saveAccessPins()" class="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold shadow transition flex items-center gap-2">
-                                <i class="fa-solid fa-floppy-disk text-amber-400"></i> Simpan Pengaturan PIN
+                        <div class="pt-2 flex justify-end">
+                            <button type="button" @click="saveAccessPins()" class="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold shadow transition">
+                                <i class="fa-solid fa-key mr-1.5 text-amber-400"></i> Simpan Pengaturan PIN
                             </button>
                         </div>
                     </div>
                 </div>
             </div>
-
         </main>
     </div>
 
-    <!-- Modal Buat / Edit PO (Resto) -->
+    <!-- ================= MODALS ================= -->
+
+    <!-- Modal Buat / Edit Purchase Order (Admin Resto) -->
     <div x-show="showCreatePOModal" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" x-cloak>
         <div class="bg-white rounded-3xl shadow-2xl max-w-2xl w-full overflow-hidden border border-slate-200">
-            <div class="bg-gradient-to-r from-red-800 to-red-900 text-white px-6 py-4 flex justify-between items-center">
-                <h3 class="font-bold text-base">
-                    <i class="fa-solid fa-cart-plus mr-2"></i>
-                    <span x-text="editingRestoPOId ? 'Edit Purchase Order (' + editingRestoPOId + ')' : 'Buat Purchase Order (PO) ke Central Kitchen'"></span>
-                </h3>
-                <button @click="showCreatePOModal = false" class="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center font-bold transition">&times;</button>
+            <div class="bg-gradient-to-r from-red-800 to-slate-900 text-white px-6 py-4 flex justify-between items-center">
+                <div>
+                    <h3 class="font-bold text-base" x-text="editingRestoPOId ? ('Edit Purchase Order: ' + editingRestoPOId) : 'Buat Purchase Order (PO) Baru'"></h3>
+                    <p class="text-[11px] text-red-200" x-text="'Outlet Pemesan: ' + getSelectedOutletName()"></p>
+                </div>
+                <button @click="showCreatePOModal = false" class="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center font-bold">&times;</button>
             </div>
             <div class="p-6 space-y-4 max-h-[75vh] overflow-y-auto text-xs">
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
-                    <div>
-                        <label class="block font-bold text-slate-700 mb-1">Outlet Pemesan</label>
-                        <input type="text" :value="getSelectedOutletName()" disabled class="w-full border border-slate-300 rounded-xl p-2.5 bg-slate-100 text-slate-600 font-bold">
-                    </div>
-                    <div>
-                        <label class="block font-bold text-slate-700 mb-1">Target Tanggal Kirim <span class="text-red-600">*</span></label>
-                        <input type="date" x-model="newPO.targetDate" class="w-full border border-slate-300 rounded-xl p-2.5 bg-white font-bold text-slate-800 focus:ring-2 focus:ring-red-500">
-                    </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Target Tanggal Pengiriman <span class="text-red-600">*</span></label>
+                    <input type="date" x-model="newPO.targetDate" class="w-full border border-slate-300 rounded-xl p-2.5 bg-slate-50 font-bold text-slate-800">
                 </div>
 
                 <div>
                     <div class="flex justify-between items-center mb-2">
-                        <label class="font-bold text-slate-800">Daftar Bahan Baku / Item yang Dipesan:</label>
-                        <button type="button" @click="addItemToPOForm()" class="bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 px-3 py-1.5 rounded-xl font-bold transition">
+                        <label class="font-bold text-slate-800">Daftar Bahan Baku / Item Dipesan:</label>
+                        <button type="button" @click="addItemToPOForm()" class="bg-red-50 hover:bg-red-100 text-red-700 px-3 py-1.5 rounded-xl font-bold transition">
                             <i class="fa-solid fa-plus mr-1"></i> Tambah Baris Item
                         </button>
                     </div>
-                    <div class="space-y-2.5">
-                        <template x-for="(item, idx) in newPO.items" :key="idx">
-                            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 bg-slate-50 p-3 rounded-2xl border border-slate-200">
-                                <select x-model="item.itemId" class="flex-1 border border-slate-300 rounded-xl p-2.5 bg-white font-semibold text-slate-800 focus:ring-2 focus:ring-red-500">
-                                    <option value="">-- Pilih Bahan Baku / Sambal --</option>
-                                    <template x-for="inv in inventory" :key="inv.id">
-                                        <option :value="inv.id" x-text="inv.name + ' (' + inv.unit + ')'"></option>
-                                    </template>
-                                </select>
-                                <div class="flex items-center gap-2">
-                                    <input type="number" min="1" x-model.number="item.qty" placeholder="Qty" class="w-24 border border-slate-300 rounded-xl p-2.5 text-center font-extrabold bg-white focus:ring-2 focus:ring-red-500">
-                                    <span class="text-slate-500 font-semibold w-12" x-text="item.itemId ? getItemUnit(item.itemId) : 'unit'"></span>
-                                    <button type="button" @click="removeItemFromPOForm(idx)" class="bg-rose-50 hover:bg-rose-100 text-rose-600 p-2.5 rounded-xl font-bold transition" title="Hapus Baris">
-                                        <i class="fa-solid fa-trash"></i>
-                                    </button>
+                    <div class="space-y-3">
+                        <template x-for="(item, index) in newPO.items" :key="index">
+                            <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200 space-y-2">
+                                <div class="flex flex-col sm:flex-row gap-2">
+                                    <select x-model="item.itemId" class="flex-1 border border-slate-300 rounded-xl p-2.5 bg-white font-bold text-slate-800">
+                                        <option value="">-- Pilih Bahan Baku --</option>
+                                        <template x-for="inv in inventory" :key="inv.id">
+                                            <option :value="inv.id" x-text="inv.name + ' [Stok CK: ' + inv.stock + ' ' + inv.unit + ']'"></option>
+                                        </template>
+                                    </select>
+                                    <div class="flex items-center gap-2">
+                                        <input type="number" min="1" x-model.number="item.qty" class="w-24 border border-slate-300 rounded-xl p-2.5 text-center font-extrabold bg-white">
+                                        <span class="text-slate-600 font-bold w-12" x-text="getItemUnit(item.itemId)"></span>
+                                        <button type="button" @click="removeItemFromPOForm(index)" class="p-2.5 text-rose-600 hover:bg-rose-100 rounded-xl font-bold" title="Hapus Baris">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
+                                    </div>
                                 </div>
+                                <!-- Keterangan Stok Real Central Kitchen -->
+                                <template x-if="item.itemId">
+                                    <div class="flex items-center justify-between text-[11px] px-2.5 py-1.5 rounded-lg"
+                                         :class="getItemStock(item.itemId) <= 0 ? 'bg-rose-100 text-rose-800' : (Number(item.qty) > getItemStock(item.itemId) ? 'bg-amber-100 text-amber-900' : 'bg-emerald-100 text-emerald-800')">
+                                        <span>
+                                            <i class="fa-solid mr-1" :class="getItemStock(item.itemId) <= 0 ? 'fa-circle-xmark' : (Number(item.qty) > getItemStock(item.itemId) ? 'fa-triangle-exclamation' : 'fa-circle-check')"></i>
+                                            <span x-text="getItemStock(item.itemId) <= 0 ? 'Stok Central Kitchen sedang kosong (0)' : (Number(item.qty) > getItemStock(item.itemId) ? 'Pesanan melebihi stok ready CK' : 'Stok Central Kitchen mencukupi')"></span>
+                                        </span>
+                                        <span class="font-extrabold" x-text="'Stok Real CK: ' + getItemStock(item.itemId) + ' ' + getItemUnit(item.itemId)"></span>
+                                    </div>
+                                </template>
                             </div>
                         </template>
                     </div>
@@ -1545,10 +1563,195 @@
                 </div>
             </div>
             <div class="bg-slate-50 px-6 py-4 border-t border-slate-200 flex justify-end gap-3">
-                <button @click="showCreatePOModal = false" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-300 transition">Batal</button>
-                <button @click="submitNewPO()" class="px-5 py-2 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 shadow flex items-center gap-1.5 transition">
+                <button @click="showCreatePOModal = false" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-300">Batal</button>
+                <button @click="submitNewPO()" class="px-6 py-2.5 bg-red-700 text-white rounded-xl font-bold hover:bg-red-800 shadow-glow-red flex items-center gap-2">
                     <i class="fa-solid fa-paper-plane"></i>
-                    <span x-text="editingRestoPOId ? 'Simpan Perubahan PO' : 'Kirim PO ke Central Kitchen'"></span>
+                    <span x-text="editingRestoPOId ? 'Simpan Perubahan PO' : 'Kirim Purchase Order'"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Catat Produksi Batch (Dari Rencana Produksi Terpilih) -->
+    <div x-show="showBatchProductionModal" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" x-cloak>
+        <div class="bg-white rounded-3xl shadow-2xl max-w-xl w-full overflow-hidden border border-slate-200">
+            <div class="bg-emerald-800 text-white px-6 py-4 flex justify-between items-center">
+                <div>
+                    <h3 class="font-bold text-base"><i class="fa-solid fa-clipboard-check mr-2"></i> Catat Selesai Produksi Terpilih</h3>
+                    <p class="text-[11px] text-emerald-100">Konfirmasi jumlah hasil produksi yang langsung masuk menambah stok Central Kitchen</p>
+                </div>
+                <button @click="showBatchProductionModal = false" class="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center font-bold">&times;</button>
+            </div>
+            <div class="p-6 space-y-4 max-h-[75vh] overflow-y-auto text-xs">
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">No. Referensi / Batch Produksi</label>
+                    <input type="text" x-model="batchProductionRef" class="w-full border border-slate-300 rounded-xl p-2.5 bg-slate-50 font-mono font-bold">
+                </div>
+                <div class="space-y-2">
+                    <template x-for="(bItem, idx) in batchProductionItems" :key="bItem.itemId">
+                        <div class="flex items-center justify-between bg-slate-50 p-3 rounded-xl border border-slate-200">
+                            <div>
+                                <span class="font-extrabold text-slate-800 block" x-text="'#' + (idx + 1) + ' ' + getItemName(bItem.itemId)"></span>
+                                <span class="text-[11px] text-slate-500" x-text="'Stok saat ini: ' + getItemStock(bItem.itemId) + ' ' + getItemUnit(bItem.itemId)"></span>
+                            </div>
+                            <div class="flex items-center gap-1.5">
+                                <input type="number" min="1" x-model.number="bItem.qty" class="w-20 border border-emerald-400 rounded-xl p-1.5 text-center font-black text-emerald-900 bg-white">
+                                <span class="font-bold text-slate-600" x-text="getItemUnit(bItem.itemId)"></span>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+            <div class="bg-slate-50 px-6 py-4 border-t border-slate-200 flex justify-end gap-3">
+                <button @click="showBatchProductionModal = false" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-300">Batal</button>
+                <button @click="submitBatchProduction()" class="px-5 py-2.5 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 shadow">Simpan Semua ke Stok</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Input Cepat Produksi Khusus Unggas (Ayam Broiler, Bebek, Ayam Pejantan -> Dada & Paha + Sampel & Reject SKU) -->
+    <div x-show="showPoultryProductionModal" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" x-cloak>
+        <div class="bg-white rounded-3xl shadow-2xl max-w-4xl w-full overflow-hidden border border-slate-200">
+            <div class="bg-gradient-to-r from-red-800 via-amber-800 to-slate-900 text-white px-6 py-4 flex justify-between items-center">
+                <div>
+                    <h3 class="font-bold text-base"><i class="fa-solid fa-drumstick-bite mr-2 text-amber-300"></i> Input Hasil Produksi Unggas (Pembagian Dada & Paha, Sampel & Reject)</h3>
+                    <p class="text-[11px] text-amber-100">Khusus Ayam Broiler, Bebek, dan Ayam Pejantan — Reject otomatis masuk ke SKU "(Reject)" & Sampel ke laporan terpisah</p>
+                </div>
+                <button @click="showPoultryProductionModal = false" class="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center font-bold">&times;</button>
+            </div>
+            <div class="p-6 space-y-5 max-h-[80vh] overflow-y-auto text-xs">
+                <!-- Pilihan Jenis Unggas & Total Produksi -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5 bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">1. Pilih Jenis Unggas <span class="text-red-600">*</span></label>
+                        <select x-model="poultrySplitForm.species" @change="onPoultrySpeciesChange()" class="w-full border border-slate-300 rounded-xl p-2.5 bg-white font-extrabold text-slate-900 focus:ring-2 focus:ring-amber-500">
+                            <option value="broiler">Ayam Broiler</option>
+                            <option value="bebek">Bebek</option>
+                            <option value="pejantan">Ayam Pejantan</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">2. Total Produksi / Potong (Contoh: 400)</label>
+                        <div class="flex gap-1.5">
+                            <input type="number" min="0" x-model.number="poultrySplitForm.totalWhole" @input="autoSplitPoultryHalves()" placeholder="Contoh: 400" class="w-full border border-amber-400 rounded-xl p-2.5 bg-amber-50/50 font-black text-slate-900 text-center text-sm focus:ring-2 focus:ring-amber-500">
+                            <button type="button" @click="autoSplitPoultryHalves()" title="Bagi Rata 50% Dada & 50% Paha" class="px-3 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl font-bold whitespace-nowrap">
+                                Bagi 50:50
+                            </button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">No. Batch Produksi</label>
+                        <input type="text" x-model="poultrySplitForm.batchNo" class="w-full border border-slate-300 rounded-xl p-2.5 bg-white font-mono font-bold">
+                    </div>
+                </div>
+
+                <!-- Ringkasan Alokasi Total vs Rincian -->
+                <div class="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 rounded-2xl border text-xs"
+                     :class="(Number(poultrySplitForm.totalWhole) > 0 && poultrySplitTotalAllocated !== Number(poultrySplitForm.totalWhole))
+                        ? 'bg-amber-50 border-amber-300 text-amber-950'
+                        : 'bg-emerald-50 border-emerald-200 text-emerald-950'">
+                    <div class="flex items-center gap-2 font-bold">
+                        <i class="fa-solid fa-scale-balanced text-base"></i>
+                        <span>Total Terinput (Dada + Paha + Sampel + Reject):</span>
+                        <span class="font-mono text-sm font-black" x-text="poultrySplitTotalAllocated + ' pcs'"></span>
+                        <template x-if="Number(poultrySplitForm.totalWhole) > 0">
+                            <span class="text-slate-600 font-semibold" x-text="'dari target ' + poultrySplitForm.totalWhole + ' pcs'"></span>
+                        </template>
+                    </div>
+                    <span class="font-extrabold" x-show="Number(poultrySplitForm.totalWhole) > 0 && poultrySplitTotalAllocated !== Number(poultrySplitForm.totalWhole)">
+                        <i class="fa-solid fa-triangle-exclamation mr-1 text-amber-600"></i>
+                        Selisih: <span x-text="(Number(poultrySplitForm.totalWhole) - poultrySplitTotalAllocated) + ' pcs'"></span>
+                    </span>
+                    <span class="font-extrabold text-emerald-700" x-show="Number(poultrySplitForm.totalWhole) > 0 && poultrySplitTotalAllocated === Number(poultrySplitForm.totalWhole)">
+                        <i class="fa-solid fa-circle-check mr-1"></i> Jumlah Sesuai (Balance)
+                    </span>
+                </div>
+
+                <!-- Tabel Pembagian Dada & Paha + Pilihan Sampel & Reject -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- KARTU 1: BAGIAN DADA -->
+                    <div class="border-2 border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm">
+                        <div class="bg-slate-900 text-white px-4 py-3 flex justify-between items-center">
+                            <div>
+                                <span class="text-[10px] font-bold uppercase tracking-wider text-amber-400">Potongan Bagian 1</span>
+                                <h4 class="font-extrabold text-sm" x-text="getPoultryPartLabel('dada')"></h4>
+                            </div>
+                            <span class="text-[11px] bg-white/15 px-2.5 py-1 rounded-lg font-bold" x-text="'Stok SKU: ' + getPoultryPartStock('dada') + ' pcs'"></span>
+                        </div>
+                        <div class="p-4 space-y-3">
+                            <div>
+                                <label class="block font-bold text-emerald-800 mb-1"><i class="fa-solid fa-circle-check mr-1"></i> Jumlah Layak Masuk Stok (Dada)</label>
+                                <input type="number" min="0" x-model.number="poultrySplitForm.dadaGood" class="w-full border-2 border-emerald-300 rounded-xl p-2.5 bg-emerald-50/40 font-black text-emerald-950 text-sm text-center">
+                            </div>
+                            <div class="grid grid-cols-2 gap-2.5">
+                                <div>
+                                    <label class="block font-bold text-purple-800 mb-1"><i class="fa-solid fa-vial mr-1"></i> Pilihan Sampel</label>
+                                    <input type="number" min="0" x-model.number="poultrySplitForm.dadaSample" class="w-full border border-purple-300 rounded-xl p-2 bg-purple-50/40 font-black text-purple-950 text-center">
+                                    <span class="text-[10px] text-purple-600 block mt-0.5">Masuk laporan terpisah</span>
+                                </div>
+                                <div>
+                                    <label class="block font-bold text-rose-800 mb-1"><i class="fa-solid fa-ban mr-1"></i> Pilihan Reject</label>
+                                    <input type="number" min="0" x-model.number="poultrySplitForm.dadaReject" class="w-full border border-rose-300 rounded-xl p-2 bg-rose-50/40 font-black text-rose-950 text-center">
+                                    <span class="text-[10px] text-rose-600 block mt-0.5" x-text="'Auto SKU: ' + getPoultryPartLabel('dada') + ' (Reject)'"></span>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-600 mb-1">Keterangan Dada (Sampel / Reject)</label>
+                                <input type="text" x-model="poultrySplitForm.dadaNotes" placeholder="Contoh: Sampel QC / Reject memar..." class="w-full border border-slate-300 rounded-xl p-2 bg-slate-50">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- KARTU 2: BAGIAN PAHA -->
+                    <div class="border-2 border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm">
+                        <div class="bg-slate-900 text-white px-4 py-3 flex justify-between items-center">
+                            <div>
+                                <span class="text-[10px] font-bold uppercase tracking-wider text-amber-400">Potongan Bagian 2</span>
+                                <h4 class="font-extrabold text-sm" x-text="getPoultryPartLabel('paha')"></h4>
+                            </div>
+                            <span class="text-[11px] bg-white/15 px-2.5 py-1 rounded-lg font-bold" x-text="'Stok SKU: ' + getPoultryPartStock('paha') + ' pcs'"></span>
+                        </div>
+                        <div class="p-4 space-y-3">
+                            <div>
+                                <label class="block font-bold text-emerald-800 mb-1"><i class="fa-solid fa-circle-check mr-1"></i> Jumlah Layak Masuk Stok (Paha)</label>
+                                <input type="number" min="0" x-model.number="poultrySplitForm.pahaGood" class="w-full border-2 border-emerald-300 rounded-xl p-2.5 bg-emerald-50/40 font-black text-emerald-950 text-sm text-center">
+                            </div>
+                            <div class="grid grid-cols-2 gap-2.5">
+                                <div>
+                                    <label class="block font-bold text-purple-800 mb-1"><i class="fa-solid fa-vial mr-1"></i> Pilihan Sampel</label>
+                                    <input type="number" min="0" x-model.number="poultrySplitForm.pahaSample" class="w-full border border-purple-300 rounded-xl p-2 bg-purple-50/40 font-black text-purple-950 text-center">
+                                    <span class="text-[10px] text-purple-600 block mt-0.5">Masuk laporan terpisah</span>
+                                </div>
+                                <div>
+                                    <label class="block font-bold text-rose-800 mb-1"><i class="fa-solid fa-ban mr-1"></i> Pilihan Reject</label>
+                                    <input type="number" min="0" x-model.number="poultrySplitForm.pahaReject" class="w-full border border-rose-300 rounded-xl p-2 bg-rose-50/40 font-black text-rose-950 text-center">
+                                    <span class="text-[10px] text-rose-600 block mt-0.5" x-text="'Auto SKU: ' + getPoultryPartLabel('paha') + ' (Reject)'"></span>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-600 mb-1">Keterangan Paha (Sampel / Reject)</label>
+                                <input type="text" x-model="poultrySplitForm.pahaNotes" placeholder="Contoh: Sampel QC / Reject tulang patah..." class="w-full border border-slate-300 rounded-xl p-2 bg-slate-50">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-[11px] text-blue-900 flex items-start gap-2">
+                    <i class="fa-solid fa-circle-info text-blue-600 mt-0.5"></i>
+                    <div>
+                        <b>Otomatisasi SKU & Laporan:</b>
+                        <ul class="list-disc ml-4 mt-0.5 space-y-0.5">
+                            <li><b>Layak (Dada & Paha)</b> otomatis menambah stok SKU utama masing-masing & tercatat di Kartu Stok.</li>
+                            <li><b>Pilihan Reject</b> otomatis masuk menambah stok pada <b>SKU khusus bernama "(Reject)"</b> (misal: <i>Broiler Dada (Reject)</i> / <i>Broiler Paha (Reject)</i>) serta tercatat di menu <i>Audit & Laporan &rarr; Reject</i>.</li>
+                            <li><b>Pilihan Sampel</b> dicatat ke <i>Laporan Sampel Produksi (Bukan Stok)</i> tanpa menambah saldo stok gudang.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-slate-50 px-6 py-4 border-t border-slate-200 flex justify-end gap-3">
+                <button @click="showPoultryProductionModal = false" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-300">Batal</button>
+                <button @click="submitPoultrySplitProduction()" class="px-6 py-2.5 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 shadow flex items-center gap-2">
+                    <i class="fa-solid fa-check-double"></i> Simpan Hasil Produksi Unggas
                 </button>
             </div>
         </div>
@@ -1768,79 +1971,6 @@
             <div class="bg-slate-50 p-4 border-t border-slate-200 flex justify-end gap-3">
                 <button @click="showRestockModal = false" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-300">Batal</button>
                 <button @click="submitRestock()" class="px-5 py-2 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 shadow">Simpan Hasil Produksi</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Input Cepat Produksi Khusus Unggas (Broiler, Bebek, Pejantan Dada & Paha) -->
-    <div x-show="showPoultryProductionModal" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" x-cloak>
-        <div class="bg-white rounded-3xl shadow-2xl max-w-4xl w-full overflow-hidden border border-slate-200">
-            <div class="bg-gradient-to-r from-red-800 via-amber-800 to-slate-900 text-white px-6 py-4 flex justify-between items-center">
-                <div>
-                    <h3 class="font-bold text-base"><i class="fa-solid fa-drumstick-bite mr-2 text-amber-300"></i> Input Hasil Produksi Unggas (Layak, Sampel & Reject)</h3>
-                    <p class="text-[11px] text-amber-100">Broiler (Dada & Paha), Bebek (Dada & Paha), dan Pejantan (Dada & Paha)</p>
-                </div>
-                <button @click="showPoultryProductionModal = false" class="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center font-bold">&times;</button>
-            </div>
-            <div class="p-6 space-y-4 max-h-[78vh] overflow-y-auto text-xs">
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
-                    <div>
-                        <label class="block font-bold text-slate-700 mb-1">No. Batch Produksi Unggas</label>
-                        <input type="text" x-model="poultryBatchForm.batchNo" class="w-full border border-slate-300 rounded-xl p-2 bg-white font-mono font-bold">
-                    </div>
-                    <div>
-                        <label class="block font-bold text-slate-700 mb-1">Catatan Umum Produksi / QC</label>
-                        <input type="text" x-model="poultryBatchForm.generalNotes" placeholder="Contoh: Shift Pagi Central Kitchen..." class="w-full border border-slate-300 rounded-xl p-2 bg-white font-medium">
-                    </div>
-                </div>
-
-                <div class="overflow-x-auto border border-slate-200 rounded-2xl">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="bg-slate-100 text-slate-700 border-b border-slate-200">
-                                <th class="p-3">Produk Unggas</th>
-                                <th class="p-3 text-center">Stok Saat Ini</th>
-                                <th class="p-3 text-center bg-emerald-50 text-emerald-900">Layak (Masuk Stok)</th>
-                                <th class="p-3 text-center bg-purple-50 text-purple-900">Sampel (Non-Stok)</th>
-                                <th class="p-3 text-center bg-rose-50 text-rose-900">Reject (Menu Reject)</th>
-                                <th class="p-3">Keterangan Reject / Sampel</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-100">
-                            <template x-for="pRow in poultryBatchForm.rows" :key="pRow.itemId">
-                                <tr class="hover:bg-slate-50">
-                                    <td class="p-3 font-extrabold text-slate-800" x-text="pRow.name"></td>
-                                    <td class="p-3 text-center font-semibold text-slate-500" x-text="getItemStock(pRow.itemId) + ' ' + pRow.unit"></td>
-                                    <td class="p-3 text-center bg-emerald-50/40">
-                                        <input type="number" min="0" x-model.number="pRow.goodQty" class="w-20 border border-emerald-300 rounded-xl p-1.5 text-center font-black text-emerald-900 bg-white">
-                                    </td>
-                                    <td class="p-3 text-center bg-purple-50/40">
-                                        <input type="number" min="0" x-model.number="pRow.sampleQty" class="w-20 border border-purple-300 rounded-xl p-1.5 text-center font-black text-purple-900 bg-white">
-                                    </td>
-                                    <td class="p-3 text-center bg-rose-50/40">
-                                        <input type="number" min="0" x-model.number="pRow.rejectQty" class="w-20 border border-rose-300 rounded-xl p-1.5 text-center font-black text-rose-900 bg-white">
-                                    </td>
-                                    <td class="p-3">
-                                        <input type="text" x-model="pRow.notes" placeholder="Alasan reject / sampel..." class="w-full min-w-[140px] border border-slate-300 rounded-xl p-1.5 bg-white">
-                                    </td>
-                                </tr>
-                            </template>
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-[11px] text-blue-900 flex items-start gap-2">
-                    <i class="fa-solid fa-circle-info text-blue-600 mt-0.5"></i>
-                    <div>
-                        <b>Alur Otomatis:</b> Angka <b>Layak</b> otomatis menambah stok gudang & Kartu Stok. Angka <b>Sampel</b> masuk ke <i>Audit & Laporan &rarr; Laporan Sampel Produksi (Bukan Stok)</i>. Angka <b>Reject</b> otomatis masuk ke <i>Audit & Laporan &rarr; Reject (Per Produk)</i>.
-                    </div>
-                </div>
-            </div>
-            <div class="bg-slate-50 px-6 py-4 border-t border-slate-200 flex justify-end gap-3">
-                <button @click="showPoultryProductionModal = false" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-300">Batal</button>
-                <button @click="submitPoultryProductionBatch()" class="px-6 py-2.5 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 shadow flex items-center gap-2">
-                    <i class="fa-solid fa-check-double"></i> Simpan Semua Hasil Produksi Unggas
-                </button>
             </div>
         </div>
     </div>
@@ -2252,6 +2382,23 @@
         <button @click="toastMessage = ''" class="text-slate-400 hover:text-white font-bold text-base">&times;</button>
     </div>
 
+    <!-- Custom Confirmation Modal (Pengganti confirm() bawaan browser) -->
+    <div x-show="confirmModal.show" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-[110] flex items-center justify-center p-4 no-print" x-cloak>
+        <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden border border-slate-200">
+            <div class="bg-rose-700 text-white px-5 py-3.5 flex items-center gap-2.5">
+                <i class="fa-solid fa-triangle-exclamation text-amber-300"></i>
+                <h3 class="font-bold text-sm" x-text="confirmModal.title"></h3>
+            </div>
+            <div class="p-5 text-xs text-slate-700 leading-relaxed">
+                <p x-text="confirmModal.message"></p>
+            </div>
+            <div class="bg-slate-50 px-5 py-3.5 border-t border-slate-200 flex justify-end gap-2.5 text-xs">
+                <button @click="confirmModal.show = false" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl font-bold transition">Batal</button>
+                <button @click="executeConfirmModal()" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold shadow transition">Ya, Hapus Permanen</button>
+            </div>
+        </div>
+    </div>
+
     <!-- FIREBASE APP & SDK MODULES -->
     <script type="module">
         import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -2548,12 +2695,12 @@
                             { id: 'INV-04', sku: 'SKU-1004', name: 'Ayam Ungkep Bumbu Kuning', category: 'Olahan Daging', stock: 150, minStock: 40, unit: 'pack' },
                             { id: 'INV-05', sku: 'SKU-1005', name: 'Bebek Ungkep Rempah', category: 'Olahan Daging', stock: 80, minStock: 20, unit: 'pack' },
                             { id: 'INV-06', sku: 'SKU-1006', name: 'Box Kemasan Takeaway Samuda', category: 'Packaging', stock: 500, minStock: 100, unit: 'pcs' },
-                            { id: 'INV-UNG-01', sku: 'SKU-2001', name: 'Broiler Dada', category: 'Olahan Unggas Khusus', stock: 50, minStock: 15, unit: 'pcs' },
-                            { id: 'INV-UNG-02', sku: 'SKU-2002', name: 'Broiler Paha', category: 'Olahan Unggas Khusus', stock: 50, minStock: 15, unit: 'pcs' },
+                            { id: 'INV-UNG-01', sku: 'SKU-2001', name: 'Ayam Broiler Dada', category: 'Olahan Unggas Khusus', stock: 50, minStock: 15, unit: 'pcs' },
+                            { id: 'INV-UNG-02', sku: 'SKU-2002', name: 'Ayam Broiler Paha', category: 'Olahan Unggas Khusus', stock: 50, minStock: 15, unit: 'pcs' },
                             { id: 'INV-UNG-03', sku: 'SKU-2003', name: 'Bebek Dada', category: 'Olahan Unggas Khusus', stock: 40, minStock: 10, unit: 'pcs' },
                             { id: 'INV-UNG-04', sku: 'SKU-2004', name: 'Bebek Paha', category: 'Olahan Unggas Khusus', stock: 40, minStock: 10, unit: 'pcs' },
-                            { id: 'INV-UNG-05', sku: 'SKU-2005', name: 'Pejantan Dada', category: 'Olahan Unggas Khusus', stock: 40, minStock: 10, unit: 'pcs' },
-                            { id: 'INV-UNG-06', sku: 'SKU-2006', name: 'Pejantan Paha', category: 'Olahan Unggas Khusus', stock: 40, minStock: 10, unit: 'pcs' }
+                            { id: 'INV-UNG-05', sku: 'SKU-2005', name: 'Ayam Pejantan Dada', category: 'Olahan Unggas Khusus', stock: 40, minStock: 10, unit: 'pcs' },
+                            { id: 'INV-UNG-06', sku: 'SKU-2006', name: 'Ayam Pejantan Paha', category: 'Olahan Unggas Khusus', stock: 40, minStock: 10, unit: 'pcs' }
                         ];
                     }
                     this.saveLocalBackup();
@@ -2561,12 +2708,12 @@
 
                 ensureSpecialPoultryItemsLocal() {
                     const specials = [
-                        { id: 'INV-UNG-01', sku: 'SKU-2001', name: 'Broiler Dada', category: 'Olahan Unggas Khusus', stock: 50, minStock: 15, unit: 'pcs' },
-                        { id: 'INV-UNG-02', sku: 'SKU-2002', name: 'Broiler Paha', category: 'Olahan Unggas Khusus', stock: 50, minStock: 15, unit: 'pcs' },
+                        { id: 'INV-UNG-01', sku: 'SKU-2001', name: 'Ayam Broiler Dada', category: 'Olahan Unggas Khusus', stock: 50, minStock: 15, unit: 'pcs' },
+                        { id: 'INV-UNG-02', sku: 'SKU-2002', name: 'Ayam Broiler Paha', category: 'Olahan Unggas Khusus', stock: 50, minStock: 15, unit: 'pcs' },
                         { id: 'INV-UNG-03', sku: 'SKU-2003', name: 'Bebek Dada', category: 'Olahan Unggas Khusus', stock: 40, minStock: 10, unit: 'pcs' },
                         { id: 'INV-UNG-04', sku: 'SKU-2004', name: 'Bebek Paha', category: 'Olahan Unggas Khusus', stock: 40, minStock: 10, unit: 'pcs' },
-                        { id: 'INV-UNG-05', sku: 'SKU-2005', name: 'Pejantan Dada', category: 'Olahan Unggas Khusus', stock: 40, minStock: 10, unit: 'pcs' },
-                        { id: 'INV-UNG-06', sku: 'SKU-2006', name: 'Pejantan Paha', category: 'Olahan Unggas Khusus', stock: 40, minStock: 10, unit: 'pcs' }
+                        { id: 'INV-UNG-05', sku: 'SKU-2005', name: 'Ayam Pejantan Dada', category: 'Olahan Unggas Khusus', stock: 40, minStock: 10, unit: 'pcs' },
+                        { id: 'INV-UNG-06', sku: 'SKU-2006', name: 'Ayam Pejantan Paha', category: 'Olahan Unggas Khusus', stock: 40, minStock: 10, unit: 'pcs' }
                     ];
                     let changed = false;
                     for (const sp of specials) {
@@ -2616,12 +2763,12 @@
                     try {
                         const invSnap = await fb.getDocs(this.getColRef('inventory'));
                         const specialPoultryDefaults = [
-                            { id: 'INV-UNG-01', sku: 'SKU-2001', name: 'Broiler Dada', category: 'Olahan Unggas Khusus', stock: 50, minStock: 15, unit: 'pcs' },
-                            { id: 'INV-UNG-02', sku: 'SKU-2002', name: 'Broiler Paha', category: 'Olahan Unggas Khusus', stock: 50, minStock: 15, unit: 'pcs' },
+                            { id: 'INV-UNG-01', sku: 'SKU-2001', name: 'Ayam Broiler Dada', category: 'Olahan Unggas Khusus', stock: 50, minStock: 15, unit: 'pcs' },
+                            { id: 'INV-UNG-02', sku: 'SKU-2002', name: 'Ayam Broiler Paha', category: 'Olahan Unggas Khusus', stock: 50, minStock: 15, unit: 'pcs' },
                             { id: 'INV-UNG-03', sku: 'SKU-2003', name: 'Bebek Dada', category: 'Olahan Unggas Khusus', stock: 40, minStock: 10, unit: 'pcs' },
                             { id: 'INV-UNG-04', sku: 'SKU-2004', name: 'Bebek Paha', category: 'Olahan Unggas Khusus', stock: 40, minStock: 10, unit: 'pcs' },
-                            { id: 'INV-UNG-05', sku: 'SKU-2005', name: 'Pejantan Dada', category: 'Olahan Unggas Khusus', stock: 40, minStock: 10, unit: 'pcs' },
-                            { id: 'INV-UNG-06', sku: 'SKU-2006', name: 'Pejantan Paha', category: 'Olahan Unggas Khusus', stock: 40, minStock: 10, unit: 'pcs' }
+                            { id: 'INV-UNG-05', sku: 'SKU-2005', name: 'Ayam Pejantan Dada', category: 'Olahan Unggas Khusus', stock: 40, minStock: 10, unit: 'pcs' },
+                            { id: 'INV-UNG-06', sku: 'SKU-2006', name: 'Ayam Pejantan Paha', category: 'Olahan Unggas Khusus', stock: 40, minStock: 10, unit: 'pcs' }
                         ];
 
                         if (invSnap.empty) {
@@ -2810,6 +2957,19 @@
                 // Inventory & Category Forms
                 restockForm: { itemId: '', qty: 0, sampleQty: 0, rejectQty: 0, refNo: '', qualityNotes: '' },
                 poultryBatchForm: { batchNo: '', generalNotes: '', rows: [] },
+                poultrySplitForm: {
+                    species: 'broiler',
+                    totalWhole: 400,
+                    batchNo: '',
+                    dadaGood: 200,
+                    dadaSample: 0,
+                    dadaReject: 0,
+                    dadaNotes: '',
+                    pahaGood: 200,
+                    pahaSample: 0,
+                    pahaReject: 0,
+                    pahaNotes: ''
+                },
                 newItemForm: { id: '', name: '', category: '', stock: 0, minStock: 10, unit: 'kg' },
                 isEditingItem: false,
                 newCategoryName: '',
@@ -2836,6 +2996,52 @@
                 toastTimer: null,
                 isSavingReceipt: false,
                 isDispatchingPO: false,
+                confirmModal: {
+                    show: false,
+                    title: '',
+                    message: '',
+                    onConfirm: null
+                },
+
+                openConfirmModal(title, message, onConfirm) {
+                    this.confirmModal = {
+                        show: true,
+                        title,
+                        message,
+                        onConfirm
+                    };
+                },
+                async executeConfirmModal() {
+                    const fn = this.confirmModal.onConfirm;
+                    this.confirmModal.show = false;
+                    if (typeof fn === 'function') {
+                        await fn();
+                    }
+                },
+                confirmDeleteInventoryItem(item) {
+                    if (!item) return;
+                    this.openConfirmModal(
+                        'Hapus Produk SKU',
+                        'Yakin ingin menghapus permanen produk "' + item.name + '" (' + (item.sku || item.id) + ') dari daftar inventori?',
+                        () => this.deleteInventoryItem(item.id)
+                    );
+                },
+                confirmDeletePO(po) {
+                    if (!po) return;
+                    this.openConfirmModal(
+                        'Hapus Purchase Order',
+                        'Yakin ingin menghapus permanen PO ' + po.id + '?',
+                        () => this.deletePO(po.id)
+                    );
+                },
+                confirmDeleteSJ(sj) {
+                    if (!sj) return;
+                    this.openConfirmModal(
+                        'Hapus Surat Jalan',
+                        'Yakin ingin menghapus permanen Surat Jalan ' + sj.id + '?',
+                        () => this.deleteSJ(sj.id)
+                    );
+                },
 
                 notify(msg) {
                     this.toastMessage = msg;
@@ -2852,9 +3058,85 @@
                 isPoultrySpecialProduct(item) {
                     if (!item) return false;
                     const name = (item.name || '').toLowerCase();
+                    if (name.includes('(reject)')) return false;
                     const isUnggas = name.includes('broiler') || name.includes('boliler') || name.includes('bebek') || name.includes('pejantan');
                     const isPart = name.includes('dada') || name.includes('paha');
                     return isUnggas && isPart;
+                },
+                get poultrySplitTotalAllocated() {
+                    const f = this.poultrySplitForm || {};
+                    return (Number(f.dadaGood) || 0) + (Number(f.dadaSample) || 0) + (Number(f.dadaReject) || 0)
+                         + (Number(f.pahaGood) || 0) + (Number(f.pahaSample) || 0) + (Number(f.pahaReject) || 0);
+                },
+                getPoultryPartLabel(part) {
+                    const map = {
+                        broiler: { dada: 'Ayam Broiler Dada', paha: 'Ayam Broiler Paha' },
+                        bebek: { dada: 'Bebek Dada', paha: 'Bebek Paha' },
+                        pejantan: { dada: 'Ayam Pejantan Dada', paha: 'Ayam Pejantan Paha' }
+                    };
+                    const sp = this.poultrySplitForm?.species || 'broiler';
+                    return (map[sp] && map[sp][part]) || 'Ayam Broiler Dada';
+                },
+                getPoultryPartItem(part) {
+                    const targetName = this.getPoultryPartLabel(part).toLowerCase();
+                    const altName = targetName.replace(/^ayam\s+/, '');
+                    return (this.inventory || []).find(i => {
+                        const n = (i.name || '').toLowerCase();
+                        return n === targetName || n === altName;
+                    }) || null;
+                },
+                getPoultryPartStock(part) {
+                    const item = this.getPoultryPartItem(part);
+                    return item ? (Number(item.stock) || 0) : 0;
+                },
+                onPoultrySpeciesChange() {
+                    this.autoSplitPoultryHalves();
+                },
+                autoSplitPoultryHalves() {
+                    const total = Math.max(0, Number(this.poultrySplitForm.totalWhole) || 0);
+                    const half = Math.floor(total / 2);
+                    const remainder = total - (half * 2);
+                    this.poultrySplitForm.dadaGood = half + remainder;
+                    this.poultrySplitForm.pahaGood = half;
+                    this.poultrySplitForm.dadaSample = 0;
+                    this.poultrySplitForm.dadaReject = 0;
+                    this.poultrySplitForm.pahaSample = 0;
+                    this.poultrySplitForm.pahaReject = 0;
+                },
+                async ensureRejectSkuForItem(baseItem) {
+                    const normalizedBase = (baseItem.name || '')
+                        .replace(/^broiler\b/i, 'Ayam Broiler')
+                        .replace(/^pejantan\b/i, 'Ayam Pejantan');
+                    const rejectName = normalizedBase + ' (REJECT)';
+                    let rejectItem = (this.inventory || []).find(i => {
+                        const n = (i.name || '').toLowerCase();
+                        return n === rejectName.toLowerCase() || n === (baseItem.name + ' (reject)').toLowerCase();
+                    });
+                    if (!rejectItem) {
+                        const newId = 'INV-REJ-' + baseItem.id;
+                        rejectItem = {
+                            id: newId,
+                            sku: (baseItem.sku || 'SKU-REJ') + '-REJ',
+                            name: rejectName,
+                            category: 'Produk Reject',
+                            stock: 0,
+                            minStock: 0,
+                            unit: baseItem.unit || 'pcs'
+                        };
+                        this.inventory.push(rejectItem);
+                        if (!this.categories.includes('Produk Reject')) {
+                            this.categories.push('Produk Reject');
+                            if (this.isCloudConnected && this.db) {
+                                const fb = window.firebaseModules;
+                                await fb.setDoc(this.getDocRef('categories', 'Produk Reject'), { name: 'Produk Reject' }).catch(e => this.handleFirestorePermissionError(e));
+                            }
+                        }
+                        if (this.isCloudConnected && this.db) {
+                            const fb = window.firebaseModules;
+                            await fb.setDoc(this.getDocRef('inventory', newId), rejectItem).catch(e => this.handleFirestorePermissionError(e));
+                        }
+                    }
+                    return rejectItem;
                 },
                 get isSelectedRestockPoultry() {
                     const item = (this.inventory || []).find(i => i.id === this.restockForm.itemId);
@@ -2964,10 +3246,8 @@
                     return Number(val) || 0;
                 },
                 getRecommendedProductionQty(item) {
-                    const stock = Math.max(0, Number(item.stock) || 0);
                     const buffer = this.getItemMinBuffer(item);
-                    const targetSafeStock = Math.max(buffer * 2, buffer + 10);
-                    return Math.max(1, targetSafeStock - stock);
+                    return Math.max(1, buffer);
                 },
                 get filteredStockCardLogs() {
                     const logs = this.stockCardLogs || [];
@@ -3558,19 +3838,18 @@
                 },
                 openPoultryProductionModal() {
                     const dateStr = new Date().toISOString().split('T')[0].replace(/-/g, '');
-                    const poultryItems = this.specialPoultryInventoryItems;
-                    this.poultryBatchForm = {
+                    this.poultrySplitForm = {
+                        species: 'broiler',
+                        totalWhole: 400,
                         batchNo: 'PROD-UNGGAS-' + dateStr + '-' + Math.floor(100 + Math.random() * 900),
-                        generalNotes: '',
-                        rows: poultryItems.map(item => ({
-                            itemId: item.id,
-                            name: item.name,
-                            unit: item.unit || 'pcs',
-                            goodQty: 0,
-                            sampleQty: 0,
-                            rejectQty: 0,
-                            notes: ''
-                        }))
+                        dadaGood: 200,
+                        dadaSample: 0,
+                        dadaReject: 0,
+                        dadaNotes: '',
+                        pahaGood: 200,
+                        pahaSample: 0,
+                        pahaReject: 0,
+                        pahaNotes: ''
                     };
                     this.showPoultryProductionModal = true;
                 },
@@ -3597,6 +3876,24 @@
                     }
 
                     if (rejectQty > 0) {
+                        const rejectSkuItem = await this.ensureRejectSkuForItem(item);
+                        const newRejStock = (Number(rejectSkuItem.stock) || 0) + rejectQty;
+                        rejectSkuItem.stock = newRejStock;
+
+                        const rejLogCardId = 'LOG-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+                        const rejStockLog = {
+                            id: rejLogCardId,
+                            timestamp: nowIso,
+                            itemId: rejectSkuItem.id,
+                            itemName: rejectSkuItem.name,
+                            type: 'IN_REJECT_SKU',
+                            qty: rejectQty,
+                            balanceAfter: newRejStock,
+                            unit: rejectSkuItem.unit || 'pcs',
+                            refNo: batchNo + ' (Reject)'
+                        };
+                        this.stockCardLogs.unshift(rejStockLog);
+
                         const rejId = 'REJ-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
                         const rejEntry = {
                             id: rejId,
@@ -3604,70 +3901,106 @@
                             batchNo: batchNo,
                             itemId: item.id,
                             itemName: item.name,
+                            rejectSkuName: rejectSkuItem.name,
                             qty: rejectQty,
                             unit: item.unit || 'pcs',
-                            notes: notes || 'Reject Hasil Produksi'
+                            notes: notes || 'Reject Hasil Produksi (Masuk SKU ' + rejectSkuItem.name + ')'
                         };
                         this.rejectLogs.unshift(rejEntry);
                         if (this.isCloudConnected && this.db) {
+                            await fb.setDoc(this.getDocRef('inventory', rejectSkuItem.id), { stock: newRejStock }, { merge: true }).catch(e => this.handleFirestorePermissionError(e));
+                            await fb.setDoc(this.getDocRef('stockCardLogs', rejLogCardId), rejStockLog).catch(e => this.handleFirestorePermissionError(e));
                             await fb.setDoc(this.getDocRef('rejectLogs', rejId), rejEntry).catch(e => this.handleFirestorePermissionError(e));
                         }
                     }
                 },
-                async submitRestock() {
-                    const goodQty = Math.max(0, Number(this.restockForm.qty) || 0);
-                    const sampleQty = this.isSelectedRestockPoultry ? Math.max(0, Number(this.restockForm.sampleQty) || 0) : 0;
-                    const rejectQty = this.isSelectedRestockPoultry ? Math.max(0, Number(this.restockForm.rejectQty) || 0) : 0;
-
-                    if (!this.restockForm.itemId || (goodQty <= 0 && sampleQty <= 0 && rejectQty <= 0)) {
-                        this.notify('Pilih produk dan masukkan minimal 1 jumlah (Layak, Sampel, atau Reject)!');
+                async submitPoultrySplitProduction() {
+                    const f = this.poultrySplitForm;
+                    if (this.poultrySplitTotalAllocated <= 0) {
+                        this.notify('Masukkan minimal 1 angka pada Dada atau Paha (Layak, Sampel, atau Reject)!');
                         return;
                     }
-                    const item = this.inventory.find(i => i.id === this.restockForm.itemId);
-                    if (!item) return;
 
                     const fb = window.firebaseModules;
-                    const batchNo = (this.restockForm.refNo && this.restockForm.refNo.trim()) ? this.restockForm.refNo.trim() : 'Produksi CK';
+                    const batchNo = (f.batchNo || '').trim() || ('PROD-UNGGAS-' + Date.now());
+                    const partsToProcess = [
+                        {
+                            part: 'dada',
+                            goodQty: Math.max(0, Number(f.dadaGood) || 0),
+                            sampleQty: Math.max(0, Number(f.dadaSample) || 0),
+                            rejectQty: Math.max(0, Number(f.dadaReject) || 0),
+                            notes: (f.dadaNotes || '').trim()
+                        },
+                        {
+                            part: 'paha',
+                            goodQty: Math.max(0, Number(f.pahaGood) || 0),
+                            sampleQty: Math.max(0, Number(f.pahaSample) || 0),
+                            rejectQty: Math.max(0, Number(f.pahaReject) || 0),
+                            notes: (f.pahaNotes || '').trim()
+                        }
+                    ];
 
-                    if (goodQty > 0) {
-                        const newStock = (Number(item.stock) || 0) + goodQty;
-                        item.stock = newStock;
+                    let totalGood = 0;
+                    let totalSample = 0;
+                    let totalReject = 0;
 
-                        const logId = 'LOG-' + Date.now();
-                        const logEntry = {
-                            id: logId,
-                            timestamp: new Date().toISOString(),
-                            itemId: item.id,
-                            itemName: item.name,
-                            type: 'IN_RESTOCK',
-                            qty: goodQty,
-                            balanceAfter: newStock,
-                            unit: item.unit,
-                            refNo: batchNo
-                        };
-                        this.stockCardLogs.unshift(logEntry);
+                    for (const p of partsToProcess) {
+                        if (p.goodQty === 0 && p.sampleQty === 0 && p.rejectQty === 0) continue;
 
-                        if (this.isCloudConnected && this.db) {
-                            await fb.updateDoc(this.getDocRef('inventory', item.id), {
-                                stock: newStock
-                            }).catch(e => this.handleFirestorePermissionError(e));
+                        let item = this.getPoultryPartItem(p.part);
+                        if (!item) {
+                            const label = this.getPoultryPartLabel(p.part);
+                            const newId = 'INV-UNG-' + Date.now() + '-' + p.part.toUpperCase();
+                            item = {
+                                id: newId,
+                                sku: 'SKU-' + Math.floor(2000 + Math.random() * 900),
+                                name: label,
+                                category: 'Olahan Unggas Khusus',
+                                stock: 0,
+                                minStock: 10,
+                                unit: 'pcs'
+                            };
+                            this.inventory.push(item);
+                            if (this.isCloudConnected && this.db) {
+                                await fb.setDoc(this.getDocRef('inventory', newId), item).catch(e => this.handleFirestorePermissionError(e));
+                            }
+                        }
 
-                            await fb.setDoc(this.getDocRef('stockCardLogs', logId), logEntry).catch(e => this.handleFirestorePermissionError(e));
+                        if (p.goodQty > 0) {
+                            totalGood += p.goodQty;
+                            const newStock = (Number(item.stock) || 0) + p.goodQty;
+                            item.stock = newStock;
+
+                            const logId = 'LOG-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+                            const logEntry = {
+                                id: logId,
+                                timestamp: new Date().toISOString(),
+                                itemId: item.id,
+                                itemName: item.name,
+                                type: 'IN_PRODUCTION',
+                                qty: p.goodQty,
+                                balanceAfter: newStock,
+                                unit: item.unit || 'pcs',
+                                refNo: batchNo
+                            };
+                            this.stockCardLogs.unshift(logEntry);
+
+                            if (this.isCloudConnected && this.db) {
+                                await fb.updateDoc(this.getDocRef('inventory', item.id), { stock: newStock }).catch(e => this.handleFirestorePermissionError(e));
+                                await fb.setDoc(this.getDocRef('stockCardLogs', logId), logEntry).catch(e => this.handleFirestorePermissionError(e));
+                            }
+                        }
+
+                        if (p.sampleQty > 0 || p.rejectQty > 0) {
+                            totalSample += p.sampleQty;
+                            totalReject += p.rejectQty;
+                            await this.recordSampleAndRejectEntry(item, batchNo, p.sampleQty, p.rejectQty, p.notes);
                         }
                     }
 
-                    if (sampleQty > 0 || rejectQty > 0) {
-                        await this.recordSampleAndRejectEntry(item, batchNo, sampleQty, rejectQty, this.restockForm.qualityNotes);
-                    }
-
                     this.saveLocalBackup();
-                    this.showRestockModal = false;
-
-                    let infoParts = [];
-                    if (goodQty > 0) infoParts.push('+' + goodQty + ' stok');
-                    if (sampleQty > 0) infoParts.push(sampleQty + ' sampel (non-stok)');
-                    if (rejectQty > 0) infoParts.push(rejectQty + ' reject');
-                    this.notify('Hasil produksi ' + item.name + ' (' + infoParts.join(', ') + ') berhasil disimpan!');
+                    this.showPoultryProductionModal = false;
+                    this.notify(`Produksi ${this.getPoultryPartLabel('dada').replace(/\s+Dada$/i, '')} tersimpan: ${totalGood} masuk stok utama, ${totalSample} sampel (laporan terpisah), ${totalReject} otomatis masuk ke SKU (REJECT).`);
                 },
                 async submitPoultryProductionBatch() {
                     const rows = this.poultryBatchForm.rows || [];
